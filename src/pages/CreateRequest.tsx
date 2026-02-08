@@ -29,7 +29,7 @@ export const CreateRequest: React.FC = () => {
     const pickRequestMutation = usePickRequest();
 
     // Query for available withdrawals matching the amount (only active when searching for Deposit)
-    const { data: availableData, isLoading: isSearching, isFetched } = useAvailableRequests({
+    const { data: availableData, isLoading: isSearching } = useAvailableRequests({
         page: 1,
         limit: 50,
         // Removed amount filter to show all requests as per user requirement

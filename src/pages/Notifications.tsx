@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { Button, Space, Tabs, Pagination } from 'antd';
+import { Button, Tabs, Pagination } from 'antd';
 import {
     Check,
     Bell,

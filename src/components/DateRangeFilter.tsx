@@ -63,7 +63,7 @@ export const DateRangeFilter: React.FC<DateRangeFilterProps> = ({ onChange }) =>
         }
     };
 
-    const handleRangeChange = (dates: any, dateStrings: [string, string]) => {
+    const handleRangeChange = (dates: any) => {
         setCustomRange(dates);
         if (dates && dates[0] && dates[1]) {
             onChange({

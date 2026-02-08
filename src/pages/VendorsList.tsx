@@ -1,18 +1,12 @@
 import React, { useState } from 'react';
-import { Button, Space, Modal, Tooltip, message } from 'antd';
+import { Button, Space, Tooltip } from 'antd';
 import {
     Plus,
-    Edit,
-    Trash2,
-    Info,
-    Key,
-    Copy,
-    Loader2,
     History
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { useAllVendors, useVendorCredentials } from '../hooks/useAuth';
-import { User } from '../types';
+import { useAllVendors } from '../hooks/useAuth';
+
 import { Pagination } from 'antd';
 
 
@@ -33,11 +27,7 @@ export const VendorsList: React.FC = () => {
     };
 
 
-    const copyToClipboard = (text: string, label: string) => {
-        if (!text || text === '******') return;
-        navigator.clipboard.writeText(text);
-        message.success(`${label} copied to clipboard`);
-    };
+
 
 
     if (loading) {
