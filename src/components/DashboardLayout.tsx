@@ -174,7 +174,7 @@ export const DashboardLayout: React.FC = () => {
                                     navigate(item.key);
                                     setMobileMenuOpen(false);
                                 }}
-                                className={`flex items-center gap-3 px-4 py-3.5 rounded-xl transition-all cursor-pointer group mb-1 ${isActive
+                                className={`flex items-center gap-3 px-[16px] py-[8px] rounded-[8px] transition-all cursor-pointer group mb-1 ${isActive
                                     ? `${item.bgColor} ${item.activeColor} font-bold border border-gray-200`
                                     : 'text-slate-500 hover:bg-slate-50 hover:text-slate-900'
                                     }`}
