@@ -35,11 +35,13 @@ export enum NotificationType {
 
 export interface User {
     id: string;
-    email: string;
+    username: string;
+    email?: string;
     name: string;
     role: UserRole;
     bankDetails?: BankDetails;
     upiId?: string;
+    mustResetPassword?: boolean;
     createdAt?: string;
 }
 
@@ -136,13 +138,15 @@ export interface SystemOverview {
 
 export interface LoginResponse {
     token: string;
+    refreshToken: string;
     user: User;
 }
 
 export interface CreateVendorRequest {
-    email: string;
+    username: string;
     password: string;
     name: string;
+    email?: string;
     bankDetails?: BankDetails;
     upiId?: string;
 }

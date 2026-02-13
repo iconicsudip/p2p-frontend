@@ -1,12 +1,15 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { User, UserRole } from '../types';
+import { getSubdomain } from '../utils/subdomain';
+import { authAPI } from '../services/apiService';
 
 
 interface AuthContextType {
     user: User | null;
     token: string | null;
-    login: (token: string, user: User) => void;
+    login: (token: string, refreshToken: string, user: User) => void;
     logout: () => void;
+    updateUser: (user: User) => void;
     isAuthenticated: boolean;
     isLoading: boolean;
     isSuperAdmin: boolean;
@@ -15,6 +18,17 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+// Helper function to get portal-specific localStorage keys
+const getStorageKeys = () => {
+    const portal = getSubdomain();
+    const prefix = portal ? `${portal}_` : '';
+    return {
+        token: `${prefix}token`,
+        refreshToken: `${prefix}refreshToken`,
+        user: `${prefix}user`,
+    };
+};
+
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
     const [user, setUser] = useState<User | null>(null);
     const [token, setToken] = useState<string | null>(null);
@@ -22,8 +36,9 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
     useEffect(() => {
         // Check for existing token on mount
-        const storedToken = localStorage.getItem('token');
-        const storedUser = localStorage.getItem('user');
+        const keys = getStorageKeys();
+        const storedToken = localStorage.getItem(keys.token);
+        const storedUser = localStorage.getItem(keys.user);
 
         if (storedToken && storedUser) {
             setToken(storedToken);
@@ -32,19 +47,38 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         setIsLoading(false);
     }, []);
 
-    const login = (newToken: string, newUser: User) => {
-        localStorage.setItem('token', newToken);
-        localStorage.setItem('user', JSON.stringify(newUser));
+    const login = (newToken: string, newRefreshToken: string, newUser: User) => {
+        const keys = getStorageKeys();
+        localStorage.setItem(keys.token, newToken);
+        localStorage.setItem(keys.refreshToken, newRefreshToken);
+        localStorage.setItem(keys.user, JSON.stringify(newUser));
 
         setToken(newToken);
         setUser(newUser);
     };
 
-    const logout = () => {
-        localStorage.removeItem('token');
-        localStorage.removeItem('user');
-        setToken(null);
-        setUser(null);
+    const logout = async () => {
+        const keys = getStorageKeys();
+        try {
+            // Call logout API to log the activity
+            // This line assumes 'authAPI' is imported and has a 'logout' method.
+            // If not, you'll need to define or import 'authAPI'.
+            await authAPI.logout();
+        } catch (error) {
+            console.error('Logout error:', error);
+        } finally {
+            localStorage.removeItem(keys.token);
+            localStorage.removeItem(keys.refreshToken);
+            localStorage.removeItem(keys.user);
+            setToken(null);
+            setUser(null);
+        }
+    };
+
+    const updateUser = (updatedUser: User) => {
+        const keys = getStorageKeys();
+        localStorage.setItem(keys.user, JSON.stringify(updatedUser));
+        setUser(updatedUser);
     };
 
     const value: AuthContextType = {
@@ -52,6 +86,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         token,
         login,
         logout,
+        updateUser,
         isAuthenticated: !!token && !!user,
         isLoading,
         isSuperAdmin: user?.role === UserRole.SUPER_ADMIN,

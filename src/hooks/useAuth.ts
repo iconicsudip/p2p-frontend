@@ -5,8 +5,8 @@ import { CreateVendorRequest } from '../types';
 
 export const useLogin = () => {
     return useMutation({
-        mutationFn: async ({ email, password }: { email: string; password: string }) => {
-            const response = await authAPI.login(email, password);
+        mutationFn: async ({ username, password }: { username: string; password: string }) => {
+            const response = await authAPI.login(username, password);
             return response.data;
         },
     });

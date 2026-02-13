@@ -15,6 +15,8 @@ import {
     useRequestDetails,
     useDeleteRequest,
 } from '../hooks/useRequests';
+import { API_BASE_URL } from '../services/api';
+import { requestAPI } from '../services/apiService';
 
 const { TabPane } = Tabs;
 
@@ -52,6 +54,14 @@ export const MyRequests: React.FC = () => {
     const [cancelReason, setCancelReason] = useState('');
     const [selectedRequestForCancel, setSelectedRequestForCancel] = useState<Request | null>(null);
 
+    // Image preview state
+    const [previewImage, setPreviewImage] = useState<string | null>(null);
+
+    // View slip modal state
+    const [viewSlipModalVisible, setViewSlipModalVisible] = useState(false);
+    const [selectedSlipToView, setSelectedSlipToView] = useState<string | null>(null);
+    const [slipLoading, setSlipLoading] = useState(false);
+
     useEffect(() => {
         if (uploadModalVisible && selectedRequest) {
             form.setFieldsValue({
@@ -82,14 +92,49 @@ export const MyRequests: React.FC = () => {
         setActiveTab(key);
     };
 
+    // Helper function to view payment slip
+    const handleViewSlip = async (request: Request) => {
+        if (!request.paymentSlips || request.paymentSlips.length === 0) return;
+
+        // Open modal immediately with loading state
+        setViewSlipModalVisible(true);
+        setSlipLoading(true);
+        setSelectedSlipToView(null);
+
+        try {
+            // Call API to get the payment slip URL
+            const response = await requestAPI.getPaymentSlipUrl(request.id, request.paymentSlips[0].id);
+            setSelectedSlipToView(response.data.url);
+        } catch (error) {
+            console.error('Failed to get payment slip URL:', error);
+            message.error('Failed to load payment slip');
+            setViewSlipModalVisible(false);
+        } finally {
+            setSlipLoading(false);
+        }
+    };
+
     const handleUploadSlip = async (values: { amount: number; paymentSlip: any }) => {
         if (!selectedRequest) return;
 
-        let file = values.paymentSlip.file;
+        let file = values.paymentSlip;
+
+        // If it's a fileList array (from getValueFromEvent), take the first item
+        if (Array.isArray(file)) {
+            file = file[0];
+        } else if (file && file.file) {
+            // Sometimes standardized onChange gives { file: ..., fileList: ... }
+            file = file.file;
+        }
 
         // Handle AntD Upload wrapping structure if needed (usually .file or .originFileObj)
-        if (file.originFileObj) {
+        if (file && file.originFileObj) {
             file = file.originFileObj;
+        }
+
+        if (!file) {
+            message.error('Please select a file to upload');
+            return;
         }
 
         const hide = message.loading('Processing image...', 0);
@@ -602,6 +647,13 @@ export const MyRequests: React.FC = () => {
                             <Dropdown
                                 menu={{
                                     items: [
+                                        // Show "View Slip" if payment slip exists
+                                        ...(record.paymentSlips && record.paymentSlips.length > 0 ? [{
+                                            key: 'view-slip',
+                                            label: <span className="text-indigo-600 font-medium">View Payment Slip</span>,
+                                            icon: <Eye size={16} className="text-indigo-600" />,
+                                            onClick: () => handleViewSlip(record),
+                                        }] : []),
                                         {
                                             key: 'report-failure',
                                             label: <span className="text-red-500 font-medium">Report Payment Failure</span>,
@@ -621,6 +673,19 @@ export const MyRequests: React.FC = () => {
                             </Dropdown>
                         </>
                     )}
+
+                    {/* For PAID_FULL and COMPLETED status, show view slip option if slip exists */}
+                    {(record.status === RequestStatus.PAID_FULL || record.status === RequestStatus.COMPLETED) &&
+                        record.paymentSlips && record.paymentSlips.length > 0 && (
+                            <Button
+                                type="default"
+                                icon={<Eye size={18} />}
+                                onClick={() => handleViewSlip(record)}
+                                className="border-indigo-200 text-indigo-600 hover:bg-indigo-50 hover:border-indigo-300 shadow-sm rounded-lg font-medium px-4 h-9"
+                            >
+                                View Slip
+                            </Button>
+                        )}
                 </Space>
             ),
             width: 180,
@@ -684,6 +749,7 @@ export const MyRequests: React.FC = () => {
                 onCancel={() => {
                     setUploadModalVisible(false);
                     form.resetFields();
+                    setPreviewImage(null);
                 }}
                 footer={null}
                 width="min(480px, 95vw)"
@@ -717,12 +783,40 @@ export const MyRequests: React.FC = () => {
                             label={<span className="font-medium text-gray-700"><span className="text-red-500 mr-1">*</span>Payment Slip</span>}
                             rules={[{ required: true, message: 'Please upload payment slip!' }]}
                             className="mb-8"
+                            valuePropName="fileList"
+                            getValueFromEvent={(e) => {
+                                if (Array.isArray(e)) {
+                                    return e;
+                                }
+                                return e?.fileList;
+                            }}
                         >
                             <Upload.Dragger
                                 beforeUpload={() => false}
                                 maxCount={1}
                                 multiple={false}
                                 className="bg-slate-50 border-dashed border-2 border-indigo-100 rounded-xl hover:border-indigo-400 transition-colors !w-full contents"
+                                onChange={(info) => {
+                                    // If file list is empty (file was removed), clear preview
+                                    if (info.fileList.length === 0) {
+                                        setPreviewImage(null);
+                                        return;
+                                    }
+
+                                    const file = info.file.originFileObj || info.file;
+                                    if (file && (file as File).type?.startsWith('image/')) {
+                                        const reader = new FileReader();
+                                        reader.onload = (e) => {
+                                            setPreviewImage(e.target?.result as string);
+                                        };
+                                        reader.readAsDataURL(file as File);
+                                    } else {
+                                        setPreviewImage(null);
+                                    }
+                                }}
+                                onRemove={() => {
+                                    setPreviewImage(null);
+                                }}
                             >
                                 <div className="p-4">
                                     <div className="w-10 h-10 bg-indigo-50 rounded-full flex items-center justify-center mx-auto mb-3 text-indigo-500">
@@ -737,6 +831,24 @@ export const MyRequests: React.FC = () => {
                                 </div>
                             </Upload.Dragger>
                         </Form.Item>
+
+                        {/* Image Preview */}
+                        {previewImage && (
+                            <div className="mb-6 -mt-2">
+                                <div className="text-sm font-medium text-gray-700 mb-2">Preview:</div>
+                                <div className="border-2 border-gray-200 rounded-xl overflow-hidden bg-gray-50">
+                                    <Image
+                                        src={previewImage}
+                                        alt="Payment slip preview"
+                                        className="w-full"
+                                        style={{ maxHeight: '150px', objectFit: 'contain' }}
+                                        preview={{
+                                            mask: <div className="text-xs">Click to enlarge</div>
+                                        }}
+                                    />
+                                </div>
+                            </div>
+                        )}
 
                         <div className="flex gap-4">
                             <Button
@@ -1319,6 +1431,37 @@ export const MyRequests: React.FC = () => {
                         </div>
                     </Form>
                 </div>
+            </Modal>
+
+            {/* View Payment Slip Modal */}
+            <Modal
+                title={<span className="text-lg font-bold text-gray-800">Payment Slip</span>}
+                open={viewSlipModalVisible}
+                onCancel={() => {
+                    setViewSlipModalVisible(false);
+                    setSelectedSlipToView(null);
+                    setSlipLoading(false);
+                }}
+                footer={null}
+                width="min(600px, 95vw)"
+                styles={{ content: { borderRadius: '20px', padding: '24px' } }}
+                closeIcon={<X className="text-gray-400 text-lg" />}
+                centered
+            >
+                {slipLoading ? (
+                    <div className="flex items-center justify-center py-20">
+                        <Spin size="large" tip="Loading payment slip..." />
+                    </div>
+                ) : selectedSlipToView ? (
+                    <div className="mt-4">
+                        <Image
+                            src={selectedSlipToView}
+                            alt="Payment slip"
+                            className="w-full rounded-xl"
+                            style={{ maxHeight: '70vh', objectFit: 'contain' }}
+                        />
+                    </div>
+                ) : null}
             </Modal>
         </div>
     );
