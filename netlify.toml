@@ -20,7 +20,7 @@
   force = true
 
 [[redirects]]
-  from = "http://indigopayapp.com/*"
-  to = "https://admin.indigopayapp.com/:splat"
+  from = "/"
+  to = "https://admin.indigopayapp.com"
   status = 301
   force = true
