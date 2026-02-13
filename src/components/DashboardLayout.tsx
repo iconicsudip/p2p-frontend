@@ -38,7 +38,7 @@ export const DashboardLayout: React.FC = () => {
     const vendorMenuItems = [
         {
             key: '/vendor/dashboard',
-            icon: <LayoutDashboard size={20} />,
+            icon: <LayoutDashboard size={18} />,
             label: 'Dashboard',
             color: 'text-indigo-500',
             bgColor: 'bg-indigo-50',
@@ -46,7 +46,7 @@ export const DashboardLayout: React.FC = () => {
         },
         {
             key: '/vendor/create-request',
-            icon: <Wallet size={20} />,
+            icon: <Wallet size={18} />,
             label: 'Create Request',
             color: 'text-emerald-500',
             bgColor: 'bg-emerald-50',
@@ -54,7 +54,7 @@ export const DashboardLayout: React.FC = () => {
         },
         {
             key: '/vendor/my-requests',
-            icon: <FileText size={20} />,
+            icon: <FileText size={18} />,
             label: 'My Requests',
             color: 'text-violet-500',
             bgColor: 'bg-violet-50',
@@ -62,7 +62,7 @@ export const DashboardLayout: React.FC = () => {
         },
         {
             key: '/vendor/notifications',
-            icon: <Bell size={20} />,
+            icon: <Bell size={18} />,
             label: 'Notifications',
             color: 'text-amber-500',
             bgColor: 'bg-amber-50',
@@ -70,7 +70,7 @@ export const DashboardLayout: React.FC = () => {
         },
         {
             key: '/vendor/settings',
-            icon: <Settings size={20} />,
+            icon: <Settings size={18} />,
             label: 'Settings',
             color: 'text-slate-500',
             bgColor: 'bg-slate-50',
@@ -81,7 +81,7 @@ export const DashboardLayout: React.FC = () => {
     const adminMenuItems = [
         {
             key: '/admin/dashboard',
-            icon: <LayoutDashboard size={20} />,
+            icon: <LayoutDashboard size={18} />,
             label: 'Dashboard',
             color: 'text-indigo-500',
             bgColor: 'bg-indigo-50',
@@ -89,7 +89,7 @@ export const DashboardLayout: React.FC = () => {
         },
         {
             key: '/admin/vendors',
-            icon: <Users size={20} />,
+            icon: <Users size={18} />,
             label: 'Vendors',
             color: 'text-cyan-500',
             bgColor: 'bg-cyan-50',
@@ -97,7 +97,7 @@ export const DashboardLayout: React.FC = () => {
         },
         {
             key: '/admin/activity-log',
-            icon: <Activity size={20} />,
+            icon: <Activity size={18} />,
             label: 'Activity Log',
             color: 'text-purple-500',
             bgColor: 'bg-purple-50',
@@ -105,7 +105,7 @@ export const DashboardLayout: React.FC = () => {
         },
         {
             key: '/admin/create-vendor',
-            icon: <UserPlus size={20} />,
+            icon: <UserPlus size={18} />,
             label: 'Create Vendor',
             color: 'text-emerald-500',
             bgColor: 'bg-emerald-50',
@@ -113,7 +113,7 @@ export const DashboardLayout: React.FC = () => {
         },
         {
             key: '/admin/settings',
-            icon: <Settings size={20} />,
+            icon: <Settings size={18} />,
             label: 'Settings',
             color: 'text-slate-500',
             bgColor: 'bg-slate-50',
@@ -121,7 +121,7 @@ export const DashboardLayout: React.FC = () => {
         },
         {
             key: '/admin/requests',
-            icon: <FileText size={20} />,
+            icon: <FileText size={18} />,
             label: 'All Requests',
             color: 'text-blue-500',
             bgColor: 'bg-blue-50',
@@ -129,7 +129,7 @@ export const DashboardLayout: React.FC = () => {
         },
         {
             key: '/admin/my-requests',
-            icon: <FileText size={20} />,
+            icon: <FileText size={18} />,
             label: 'My Requests',
             color: 'text-violet-500',
             bgColor: 'bg-violet-50',
@@ -137,7 +137,7 @@ export const DashboardLayout: React.FC = () => {
         },
         {
             key: '/admin/notifications',
-            icon: <Bell size={20} />,
+            icon: <Bell size={18} />,
             label: 'Notifications',
             color: 'text-amber-500',
             bgColor: 'bg-amber-50',
@@ -179,11 +179,11 @@ export const DashboardLayout: React.FC = () => {
                                     : 'text-slate-500 hover:bg-slate-50 hover:text-slate-900'
                                     }`}
                             >
-                                <span className={`text-[20px] flex items-center transition-colors ${isActive ? item.activeColor : item.color
+                                <span className={`text-[18px] flex items-center transition-colors ${isActive ? item.activeColor : item.color
                                     }`}>
                                     {item.icon}
                                 </span>
-                                <span className={`text-[15px] flex-1 font-medium`}>{item.label as string}</span>
+                                <span className={`text-[14px] flex-1 font-medium`}>{item.label as string}</span>
                                 {item.label === 'Notifications' && unreadCount > 0 && (
                                     <span className="bg-rose-500 text-white text-xs font-bold px-2 py-0.5 rounded-full min-w-[20px] text-center shadow-sm shadow-rose-200">
                                         {unreadCount}
@@ -201,8 +201,8 @@ export const DashboardLayout: React.FC = () => {
                     onClick={handleLogout}
                     className="flex items-center gap-3 px-4 py-3.5 w-full text-rose-500 hover:text-rose-600 transition-all rounded-xl hover:bg-rose-50 group font-medium"
                 >
-                    <LogOut className="text-[20px] group-hover:scale-110 transition-transform" />
-                    <span className="text-[15px]">Sign Out</span>
+                    <LogOut className="text-[18px] group-hover:scale-110 transition-transform" />
+                    <span className="text-[14px]">Sign Out</span>
                 </button>
             </div>
         </div>
