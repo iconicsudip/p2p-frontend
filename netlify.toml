@@ -1,26 +1,35 @@
+############################################
+# 1️⃣ Root domain → Admin subdomain
+############################################
+[[redirects]]
+  from = "/*"
+  to = "https://admin.indigopayapp.com/:splat"
+  status = 301
+  force = true
+  conditions = { Host = "indigopayapp.com" }
+
+############################################
+# 2️⃣ Admin subdomain → /admin/*
+############################################
+[[redirects]]
+  from = "/*"
+  to = "/admin/:splat"
+  status = 200
+  conditions = { Host = "admin.indigopayapp.com" }
+
+############################################
+# 3️⃣ Vendor subdomain → /vendor/*
+############################################
+[[redirects]]
+  from = "/*"
+  to = "/vendor/:splat"
+  status = 200
+  conditions = { Host = "vendor.indigopayapp.com" }
+
+############################################
+# 4️⃣ SPA fallback (ALWAYS LAST)
+############################################
 [[redirects]]
   from = "/*"
   to = "/index.html"
   status = 200
-
-[[redirects]]
-  from = "https://admin.indigopayapp.com/*"
-  to = "/admin/:splat"
-  status = 200
-
-[[redirects]]
-  from = "https://vendor.indigopayapp.com/*"
-  to = "/vendor/:splat"
-  status = 200
-
-[[redirects]]
-  from = "https://indigopayapp.com/*"
-  to = "https://admin.indigopayapp.com/:splat"
-  status = 301
-  force = true
-
-[[redirects]]
-  from = "/"
-  to = "https://admin.indigopayapp.com"
-  status = 301
-  force = true
