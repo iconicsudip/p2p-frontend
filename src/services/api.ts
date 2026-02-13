@@ -67,8 +67,9 @@ api.interceptors.response.use(
 
         const status = error.response.status;
         const data = error.response.data as { error?: string };
+        const isLoginRequest = originalRequest.url?.includes('/auth/login');
 
-        if (status === 401 && !originalRequest._retry) {
+        if (status === 401 && !originalRequest._retry && !isLoginRequest) {
             if (isRefreshing) {
                 return new Promise(function (resolve, reject) {
                     failedQueue.push({ resolve, reject });
@@ -127,6 +128,11 @@ api.interceptors.response.use(
             } finally {
                 isRefreshing = false;
             }
+        }
+
+        // Skip global error handling for login requests as they are handled in the component
+        if (isLoginRequest) {
+            return Promise.reject(error);
         }
 
         switch (status) {
