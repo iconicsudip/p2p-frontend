@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { message } from 'antd';
 import { useAuth } from '../contexts/AuthContext';
+import { useGlobalNotification } from '../components/GlobalNotification';
 import { useLogin } from '../hooks/useAuth';
 import { authAPI } from '../services/apiService';
 import { UserRole } from '../types';
@@ -11,6 +11,7 @@ import { LoginSidePanel } from '../components/auth/LoginSidePanel';
 
 export const Login: React.FC = () => {
     const { login, user } = useAuth();
+    const { notification } = useGlobalNotification();
     const loginMutation = useLogin();
     const navigate = useNavigate();
     const [portal] = useState(getSubdomain());
@@ -23,7 +24,10 @@ export const Login: React.FC = () => {
         if (user) {
             // Validate user role matches portal
             if (!isRoleValidForPortal(user.role, portal)) {
-                message.error(`Please use the ${user.role === UserRole.SUPER_ADMIN ? 'admin' : 'vendor'} portal to login`);
+                notification.error({
+                    message: 'Access Denied',
+                    description: `Please use the ${user.role === UserRole.SUPER_ADMIN ? 'admin' : 'vendor'} portal to login`,
+                });
                 return;
             }
 
@@ -31,7 +35,7 @@ export const Login: React.FC = () => {
             const dashboardPath = getDefaultDashboardPath(portal);
             navigate(dashboardPath);
         }
-    }, [user, navigate, portal]);
+    }, [user, navigate, portal, notification]);
 
     const onFinish = async (values: { username: string; password: string }) => {
         try {
@@ -40,17 +44,28 @@ export const Login: React.FC = () => {
             // Validate user role matches portal before logging in
             if (portal && !isRoleValidForPortal(data.user.role, portal)) {
                 const correctPortal = data.user.role === UserRole.SUPER_ADMIN ? 'admin' : 'vendor';
-                message.error(`Please use the ${correctPortal} portal to login`);
+                notification.error({
+                    message: 'Access Denied',
+                    description: `Please use the ${correctPortal} portal to login`,
+                });
                 return;
             }
 
             login(data.token, data.refreshToken, data.user);
-            message.success('Login successful!');
+            notification.success({
+                message: 'Login Successful',
+                description: 'Welcome back!',
+            });
 
             // Navigation is handled by the useEffect watching 'user'
-        } catch (error) {
+        } catch (error: any) {
             // Error is handled by axios interceptor or mutation onError
             console.error('Login error:', error);
+            const errorMessage = error.response?.data?.message || 'Login failed. Please check your credentials.';
+            notification.error({
+                message: 'Login Failed',
+                description: errorMessage,
+            });
         }
     };
 
@@ -58,10 +73,18 @@ export const Login: React.FC = () => {
         try {
             setForgotPasswordLoading(true);
             await authAPI.forgotPassword(values.username, values.newPassword);
-            message.success('Password reset successfully! You can now login with your new password.');
+            notification.success({
+                message: 'Password Reset Successful',
+                description: 'You can now login with your new password.',
+            });
             setIsForgotPasswordModalVisible(false);
         } catch (error: any) {
             console.error('Forgot password error:', error);
+            const errorMessage = error.response?.data?.message || 'Failed to reset password. Please try again.';
+            notification.error({
+                message: 'Reset Password Failed',
+                description: errorMessage,
+            });
         } finally {
             setForgotPasswordLoading(false);
         }

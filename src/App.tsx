@@ -9,6 +9,7 @@ import { ProtectedRoute } from './components/ProtectedRoute';
 import { SubdomainRouteGuard } from './components/SubdomainRouteGuard';
 import { RootRedirect } from './components/RootRedirect';
 import { DashboardLayout } from './components/DashboardLayout';
+import { GlobalNotification } from './components/GlobalNotification';
 import { Login } from './pages/Login';
 import { VendorDashboard } from './pages/VendorDashboard';
 import { SuperAdminDashboard } from './pages/SuperAdminDashboard';
@@ -34,59 +35,61 @@ const App: React.FC = () => {
                 },
             }}
         >
-            <QueryClientProvider client={queryClient}>
-                <AuthProvider>
-                    <BrowserRouter>
-                        <Routes>
-                            <Route path="/login" element={<Login />} />
+            <GlobalNotification>
+                <QueryClientProvider client={queryClient}>
+                    <AuthProvider>
+                        <BrowserRouter>
+                            <Routes>
+                                <Route path="/login" element={<Login />} />
 
-                            {/* Vendor Routes */}
-                            <Route
-                                path="/vendor"
-                                element={
-                                    <SubdomainRouteGuard allowedPortal="vendor">
-                                        <ProtectedRoute allowedRoles={[UserRole.VENDOR]}>
-                                            <DashboardLayout />
-                                        </ProtectedRoute>
-                                    </SubdomainRouteGuard>
-                                }
-                            >
-                                <Route path="dashboard" element={<VendorDashboard />} />
-                                <Route path="create-request" element={<CreateRequest />} />
-                                <Route path="my-requests" element={<MyRequests />} />
-                                <Route path="notifications" element={<Notifications />} />
-                                <Route path="settings" element={<VendorSettings />} />
-                            </Route>
+                                {/* Vendor Routes */}
+                                <Route
+                                    path="/vendor"
+                                    element={
+                                        <SubdomainRouteGuard allowedPortal="vendor">
+                                            <ProtectedRoute allowedRoles={[UserRole.VENDOR]}>
+                                                <DashboardLayout />
+                                            </ProtectedRoute>
+                                        </SubdomainRouteGuard>
+                                    }
+                                >
+                                    <Route path="dashboard" element={<VendorDashboard />} />
+                                    <Route path="create-request" element={<CreateRequest />} />
+                                    <Route path="my-requests" element={<MyRequests />} />
+                                    <Route path="notifications" element={<Notifications />} />
+                                    <Route path="settings" element={<VendorSettings />} />
+                                </Route>
 
-                            {/* Super Admin Routes */}
-                            <Route
-                                path="/admin"
-                                element={
-                                    <SubdomainRouteGuard allowedPortal="admin">
-                                        <ProtectedRoute allowedRoles={[UserRole.SUPER_ADMIN]}>
-                                            <DashboardLayout />
-                                        </ProtectedRoute>
-                                    </SubdomainRouteGuard>
-                                }
-                            >
-                                <Route path="dashboard" element={<SuperAdminDashboard />} />
-                                <Route path="vendors" element={<VendorsList />} />
-                                <Route path="requests" element={<AllRequests />} />
-                                <Route path="activity-log" element={<AdminActivityLog />} />
-                                <Route path="create-vendor" element={<CreateVendor />} />
-                                <Route path="settings" element={<AdminSettings />} />
-                                <Route path="my-requests" element={<AdminMyRequests />} />
-                                <Route path="notifications" element={<Notifications />} />
-                            </Route>
+                                {/* Super Admin Routes */}
+                                <Route
+                                    path="/admin"
+                                    element={
+                                        <SubdomainRouteGuard allowedPortal="admin">
+                                            <ProtectedRoute allowedRoles={[UserRole.SUPER_ADMIN]}>
+                                                <DashboardLayout />
+                                            </ProtectedRoute>
+                                        </SubdomainRouteGuard>
+                                    }
+                                >
+                                    <Route path="dashboard" element={<SuperAdminDashboard />} />
+                                    <Route path="vendors" element={<VendorsList />} />
+                                    <Route path="requests" element={<AllRequests />} />
+                                    <Route path="activity-log" element={<AdminActivityLog />} />
+                                    <Route path="create-vendor" element={<CreateVendor />} />
+                                    <Route path="settings" element={<AdminSettings />} />
+                                    <Route path="my-requests" element={<AdminMyRequests />} />
+                                    <Route path="notifications" element={<Notifications />} />
+                                </Route>
 
-                            {/* Default redirect based on subdomain and auth */}
-                            <Route path="/" element={<RootRedirect />} />
-                            <Route path="*" element={<RootRedirect />} />
-                        </Routes>
-                    </BrowserRouter>
-                </AuthProvider>
-                <ReactQueryDevtools initialIsOpen={false} />
-            </QueryClientProvider>
+                                {/* Default redirect based on subdomain and auth */}
+                                <Route path="/" element={<RootRedirect />} />
+                                <Route path="*" element={<RootRedirect />} />
+                            </Routes>
+                        </BrowserRouter>
+                    </AuthProvider>
+                    <ReactQueryDevtools initialIsOpen={false} />
+                </QueryClientProvider>
+            </GlobalNotification>
         </ConfigProvider>
     );
 };
