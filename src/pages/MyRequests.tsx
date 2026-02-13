@@ -15,7 +15,6 @@ import {
     useRequestDetails,
     useDeleteRequest,
 } from '../hooks/useRequests';
-import { API_BASE_URL } from '../services/api';
 import { requestAPI } from '../services/apiService';
 
 const { TabPane } = Tabs;

@@ -13,7 +13,7 @@ export const AllRequests: React.FC = () => {
     const [limit, setLimit] = useState(10);
     const [statusFilter, setStatusFilter] = useState<string | undefined>();
     // Default to withdrawal requests as per requirement
-    const [typeFilter, setTypeFilter] = useState<string | undefined>(RequestType.WITHDRAWAL);
+    const [typeFilter] = useState<string | undefined>(RequestType.WITHDRAWAL);
     const [searchQuery, setSearchQuery] = useState('');
     const [dateRange, setDateRange] = useState<[string, string] | undefined>();
 
