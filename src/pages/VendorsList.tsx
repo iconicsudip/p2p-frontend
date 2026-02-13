@@ -2,18 +2,26 @@ import React, { useState } from 'react';
 import { Button, Space, Tooltip } from 'antd';
 import {
     Plus,
-    History
+    History,
+    KeyRound
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAllVendors } from '../hooks/useAuth';
-
-import { Pagination } from 'antd';
+import { authAPI } from '../services/apiService';
+import { Pagination, Modal, Input, Form, message } from 'antd';
+import { VendorActivityDrawer } from '../components/VendorActivityDrawer';
 
 
 export const VendorsList: React.FC = () => {
     const [page, setPage] = useState(1);
     const [limit, setLimit] = useState(10);
     const navigate = useNavigate();
+    const [resetPasswordModalVisible, setResetPasswordModalVisible] = useState(false);
+    const [selectedVendorForReset, setSelectedVendorForReset] = useState<{ id: string; name: string } | null>(null);
+    const [activityDrawerVisible, setActivityDrawerVisible] = useState(false);
+    const [selectedVendorForActivity, setSelectedVendorForActivity] = useState<{ id: string; name: string } | null>(null);
+    const [form] = Form.useForm();
+    const [resetLoading, setResetLoading] = useState(false);
 
     // React Query Hooks
     const { data: vendorsData, isLoading: loading } = useAllVendors(page, limit);
@@ -24,6 +32,23 @@ export const VendorsList: React.FC = () => {
     const handlePageChange = (page: number, pageSize: number) => {
         setPage(page);
         setLimit(pageSize);
+    };
+
+    const handleResetPassword = async (values: { newPassword: string }) => {
+        if (!selectedVendorForReset) return;
+
+        setResetLoading(true);
+        try {
+            await authAPI.resetUserPassword(selectedVendorForReset.id, values.newPassword);
+            message.success('Password reset successfully');
+            setResetPasswordModalVisible(false);
+            form.resetFields();
+            setSelectedVendorForReset(null);
+        } catch (error: any) {
+            message.error(error.response?.data?.message || 'Failed to reset password');
+        } finally {
+            setResetLoading(false);
+        }
     };
 
 
@@ -151,10 +176,24 @@ export const VendorsList: React.FC = () => {
                                         <Space>
                                             <Tooltip title="View Activity History">
                                                 <button
-                                                    onClick={() => navigate(`/admin/activity-log?vendorId=${vendor.id}`)}
+                                                    onClick={() => {
+                                                        setSelectedVendorForActivity({ id: vendor.id, name: vendor.name });
+                                                        setActivityDrawerVisible(true);
+                                                    }}
                                                     className="p-2 text-slate-400 hover:text-blue-500 transition-colors cursor-pointer"
                                                 >
                                                     <History size={16} />
+                                                </button>
+                                            </Tooltip>
+                                            <Tooltip title="Reset Password">
+                                                <button
+                                                    onClick={() => {
+                                                        setSelectedVendorForReset({ id: vendor.id, name: vendor.name });
+                                                        setResetPasswordModalVisible(true);
+                                                    }}
+                                                    className="p-2 text-slate-400 hover:text-amber-500 transition-colors cursor-pointer"
+                                                >
+                                                    <KeyRound size={16} />
                                                 </button>
                                             </Tooltip>
                                         </Space>
@@ -179,6 +218,53 @@ export const VendorsList: React.FC = () => {
                     />
                 </div>
             </div>
+
+            {/* Reset Password Modal */}
+            <Modal
+                title={`Reset Password for ${selectedVendorForReset?.name}`}
+                open={resetPasswordModalVisible}
+                onCancel={() => {
+                    setResetPasswordModalVisible(false);
+                    form.resetFields();
+                    setSelectedVendorForReset(null);
+                }}
+                footer={null}
+                centered
+            >
+                <Form
+                    form={form}
+                    layout="vertical"
+                    onFinish={handleResetPassword}
+                >
+                    <Form.Item
+                        name="newPassword"
+                        label="New Password"
+                        rules={[
+                            { required: true, message: 'Please enter new password' },
+                            { min: 6, message: 'Password must be at least 6 characters' }
+                        ]}
+                    >
+                        <Input.Password placeholder="Enter new password" />
+                    </Form.Item>
+
+                    <Form.Item>
+                        <Button type="primary" htmlType="submit" loading={resetLoading} block>
+                            Reset Password
+                        </Button>
+                    </Form.Item>
+                </Form>
+            </Modal>
+
+            {/* Vendor Activity Drawer */}
+            <VendorActivityDrawer
+                open={activityDrawerVisible}
+                onClose={() => {
+                    setActivityDrawerVisible(false);
+                    setSelectedVendorForActivity(null);
+                }}
+                vendorId={selectedVendorForActivity?.id || null}
+                vendorName={selectedVendorForActivity?.name || ''}
+            />
         </div>
     );
 };

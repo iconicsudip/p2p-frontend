@@ -17,7 +17,7 @@ export const CreateVendor: React.FC = () => {
     const [form] = Form.useForm();
     const createVendorMutation = useCreateVendor();
     const [isModalOpen, setIsModalOpen] = useState(false);
-    const [createdCredentials, setCreatedCredentials] = useState<{ email: string, password: string } | null>(null);
+    const [createdCredentials, setCreatedCredentials] = useState<{ username: string, password: string } | null>(null);
     const navigate = useNavigate();
 
     const onFinish = async (values: CreateVendorRequest) => {
@@ -25,7 +25,7 @@ export const CreateVendor: React.FC = () => {
             await createVendorMutation.mutateAsync(values);
             // message.success handled in hook
             setCreatedCredentials({
-                email: values.email,
+                username: values.username,
                 password: values.password
             });
             setIsModalOpen(true);
@@ -78,19 +78,31 @@ export const CreateVendor: React.FC = () => {
                         </Form.Item>
 
                         <Form.Item
-                            name="email"
-                            label={<span className="font-bold text-slate-700 text-sm">Email Address <span className="text-rose-500">*</span></span>}
+                            name="username"
+                            label={<span className="font-bold text-slate-700 text-sm">Username <span className="text-rose-500">*</span></span>}
                             rules={[
-                                { required: true, message: 'Please enter email!' },
-                                { type: 'email', message: 'Please enter a valid email!' },
+                                { required: true, message: 'Please enter username!' },
                             ]}
                         >
                             <Input
-                                placeholder="vendor@company.com"
+                                placeholder="Enter unique username"
                                 className="bg-slate-50 border-transparent hover:bg-slate-100 focus:bg-white focus:border-indigo-500 rounded-xl px-4 py-3"
                             />
                         </Form.Item>
                     </div>
+
+                    <Form.Item
+                        name="email"
+                        label={<span className="font-bold text-slate-700 text-sm">Email Address (Optional)</span>}
+                        rules={[
+                            { type: 'email', message: 'Please enter a valid email!' },
+                        ]}
+                    >
+                        <Input
+                            placeholder="vendor@company.com"
+                            className="bg-slate-50 border-transparent hover:bg-slate-100 focus:bg-white focus:border-indigo-500 rounded-xl px-4 py-3"
+                        />
+                    </Form.Item>
 
                     <Form.Item
                         name="password"
@@ -217,14 +229,14 @@ export const CreateVendor: React.FC = () => {
 
                 <div className="bg-slate-50 p-5 rounded-xl border border-slate-200">
                     <div className="mb-4">
-                        <p className="text-xs font-bold text-slate-400 mb-1 uppercase tracking-wider">Email Address</p>
+                        <p className="text-xs font-bold text-slate-400 mb-1 uppercase tracking-wider">Username</p>
                         <div className="flex items-center justify-between bg-white px-3 py-2.5 rounded-lg border border-slate-200 shadow-sm">
-                            <code className="text-slate-800 font-mono text-base">{createdCredentials?.email}</code>
-                            <Tooltip title="Copy Email">
+                            <code className="text-slate-800 font-mono text-base">{createdCredentials?.username}</code>
+                            <Tooltip title="Copy Username">
                                 <Button
                                     type="text"
                                     icon={<Copy className="text-slate-400 hover:text-indigo-electric w-4 h-4" />}
-                                    onClick={() => createdCredentials && copyToClipboard(createdCredentials.email, 'Email')}
+                                    onClick={() => createdCredentials && copyToClipboard(createdCredentials.username, 'Username')}
                                 />
                             </Tooltip>
                         </div>

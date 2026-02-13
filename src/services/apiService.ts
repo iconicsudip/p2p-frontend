@@ -15,8 +15,8 @@ import {
 
 // Authentication APIs
 export const authAPI = {
-    login: (email: string, password: string) =>
-        api.post<LoginResponse>('/auth/login', { email, password }),
+    login: (username: string, password: string) =>
+        api.post<LoginResponse>('/auth/login', { username, password }),
 
     getMe: () =>
         api.get<{ user: User }>('/auth/me'),
@@ -26,13 +26,47 @@ export const authAPI = {
 
     getAllVendors: (params?: { page?: number; limit?: number }) =>
         api.get<{ vendors: PaginatedResponse<User> }>('/auth/vendors', { params }),
+
     getVendorCredentials: (id: string) => api.get(`/auth/vendors/${id}/credentials`),
+
+    getAdminBankDetails: () =>
+        api.get<{ admin: { name: string; bankDetails?: any; upiId?: string } }>('/auth/admin/bank-details'),
+
+    updateAdminBankDetails: (data: { bankDetails?: any; upiId?: string }) =>
+        api.put('/auth/admin/bank-details', data),
+
+    resetPassword: (currentPassword: string, newPassword: string) =>
+        api.post<{ message: string; user: User }>('/auth/reset-password', { currentPassword, newPassword }),
+
+    resetUserPassword: (userId: string, newPassword: string) =>
+        api.post<{ message: string }>('/auth/admin/reset-password', { userId, newPassword }),
+
+    checkUsernameAvailability: (username: string) =>
+        api.get<{ available: boolean }>(`/auth/check-username/${username}`),
+
+    updateProfile: (data: { name: string; username: string }) =>
+        api.put<{ message: string; user: User }>('/auth/profile', data),
+
+    forgotPassword: (username: string, newPassword: string) =>
+        api.post<{ message: string }>('/auth/forgot-password', { username, newPassword }),
+
+    logout: async () => {
+        return api.post('/auth/logout');
+    },
+
+    getUserActivity: async (userId: string, params?: { page?: number; limit?: number }) => {
+        return api.get(`/auth/activity/${userId}`, { params });
+    },
 };
 
 // Request APIs
 export const requestAPI = {
-    createRequest: (data: CreateRequestRequest) =>
-        api.post<{ message: string; request: Request }>('/requests', data),
+    createRequest: async (data: Partial<CreateRequestRequest>) => {
+        return api.post('/requests', data);
+    },
+
+    createAdminWithdrawal: (amount: number) =>
+        api.post<{ message: string; request: Request }>('/requests/admin-withdrawal', { amount }),
 
     getAvailableRequests: (params?: { page?: number; limit?: number; amount?: number; type?: string }) =>
         api.get<{ requests: PaginatedResponse<Request> }>('/requests/available', { params }),
@@ -83,6 +117,9 @@ export const requestAPI = {
 
     getPaymentSlips: (id: string) =>
         api.get<{ slips: any[] }>(`/requests/${id}/slips`),
+
+    getPaymentSlipUrl: (requestId: string, slipId: string) =>
+        api.get<{ url: string }>(`/requests/${requestId}/payment-slips/${slipId}/url`),
 
     getAllRequestsForAdmin: (params?: { page?: number; limit?: number; startDate?: string; endDate?: string; status?: string; type?: string; vendorId?: string; search?: string }) =>
         api.get<{ requests: PaginatedResponse<Request> }>('/requests/admin/all', { params }),

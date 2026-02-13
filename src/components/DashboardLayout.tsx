@@ -7,15 +7,16 @@ import {
     Bell,
     LogOut,
     Wallet,
-
     FileText,
     Activity,
     Menu,
     X,
+    Settings,
 } from 'lucide-react';
 import { useNavigate, useLocation, Outlet } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useUnreadCount } from '../hooks/useNotifications';
+import { ResetPasswordModal } from './ResetPasswordModal';
 
 const { Header, Sider, Content } = Layout;
 
@@ -52,14 +53,6 @@ export const DashboardLayout: React.FC = () => {
             activeColor: 'text-emerald-600'
         },
         {
-            key: '/vendor/available-requests',
-            icon: <FileText size={20} />,
-            label: 'Available Requests',
-            color: 'text-blue-500',
-            bgColor: 'bg-blue-50',
-            activeColor: 'text-blue-600'
-        },
-        {
             key: '/vendor/my-requests',
             icon: <FileText size={20} />,
             label: 'My Requests',
@@ -74,6 +67,14 @@ export const DashboardLayout: React.FC = () => {
             color: 'text-amber-500',
             bgColor: 'bg-amber-50',
             activeColor: 'text-amber-600'
+        },
+        {
+            key: '/vendor/settings',
+            icon: <Settings size={20} />,
+            label: 'Settings',
+            color: 'text-slate-500',
+            bgColor: 'bg-slate-50',
+            activeColor: 'text-slate-600'
         }
     ];
 
@@ -109,6 +110,30 @@ export const DashboardLayout: React.FC = () => {
             color: 'text-emerald-500',
             bgColor: 'bg-emerald-50',
             activeColor: 'text-emerald-600'
+        },
+        {
+            key: '/admin/settings',
+            icon: <Settings size={20} />,
+            label: 'Settings',
+            color: 'text-slate-500',
+            bgColor: 'bg-slate-50',
+            activeColor: 'text-slate-600'
+        },
+        {
+            key: '/admin/requests',
+            icon: <FileText size={20} />,
+            label: 'All Requests',
+            color: 'text-blue-500',
+            bgColor: 'bg-blue-50',
+            activeColor: 'text-blue-600'
+        },
+        {
+            key: '/admin/my-requests',
+            icon: <FileText size={20} />,
+            label: 'My Requests',
+            color: 'text-violet-500',
+            bgColor: 'bg-violet-50',
+            activeColor: 'text-violet-600'
         },
         {
             key: '/admin/notifications',
@@ -222,7 +247,7 @@ export const DashboardLayout: React.FC = () => {
                             type="text"
                             icon={<Menu size={24} />}
                             onClick={() => setMobileMenuOpen(true)}
-                            className="md:hidden -ml-2 text-slate-600"
+                            className="md:hidden -ml-2 text-slate-600 flex md:!hidden"
                         />
 
                         {/* Breadcrumbs */}
@@ -253,6 +278,9 @@ export const DashboardLayout: React.FC = () => {
                     <Outlet />
                 </Content>
             </Layout>
+
+            {/* Reset Password Modal - Shows when vendor must reset password */}
+            <ResetPasswordModal visible={!!user?.mustResetPassword} />
         </Layout>
     );
 };
