@@ -1,14 +1,17 @@
 import React, { useState } from 'react';
-import { Form, Input, Button, Card, message, Modal } from 'antd';
+import { Form, Input, Button, Card, message, Modal, Upload, Image } from 'antd';
 import { useNavigate } from 'react-router-dom';
-import { Building2, QrCode, Search, User, ArrowDown } from 'lucide-react';
+import { Building2, QrCode, Search, User, ArrowDown, Image as ImageIcon, Upload as UploadIcon } from 'lucide-react';
 import { useCreateRequest, useAvailableRequests, usePickRequest, useAdminBankDetails } from '../hooks/useRequests';
+import { useCurrentUser } from '../hooks/useAuth';
 import { requestAPI } from '../services/apiService';
-import { RequestType, CreateRequestRequest, UserRole } from '../types';
+import { RequestType, CreateRequestRequest, UserRole, WithdrawalLimitConfig } from '../types';
+import { compressImage } from '../utils/imageUtils';
 
 enum PaymentMethod {
     BANK = 'bank',
-    UPI = 'upi'
+    UPI = 'upi',
+    QR_CODE = 'qr_code'
 }
 
 export const CreateRequest: React.FC = () => {
@@ -24,6 +27,13 @@ export const CreateRequest: React.FC = () => {
     const [selectedWithdrawal, setSelectedWithdrawal] = useState<any>(null);
     const [pickAmount, setPickAmount] = useState<number | null>(null);
 
+    // Reset search amount when input is cleared
+    React.useEffect(() => {
+        if (!currentAmount) {
+            setSearchAmount(undefined);
+        }
+    }, [currentAmount]);
+
     // Modal state for bulk upload
     const [isBulkUploadModalVisible, setIsBulkUploadModalVisible] = useState(false);
     const [bulkUploadText, setBulkUploadText] = useState('');
@@ -32,28 +42,66 @@ export const CreateRequest: React.FC = () => {
     const [isBankDetailsModalVisible, setIsBankDetailsModalVisible] = useState(false);
     const [pickedRequestDetails, setPickedRequestDetails] = useState<any>(null);
 
+
+
+    // QR Code state
+    const [qrCodeFile, setQrCodeFile] = useState<File | null>(null);
+    const [qrCodePreview, setQrCodePreview] = useState<string | null>(null);
+
+    const handleQrCodeUpload = async (file: File) => {
+        const isJpgOrPng = file.type === 'image/jpeg' || file.type === 'image/png';
+        if (!isJpgOrPng) {
+            message.error('You can only upload JPG/PNG file!');
+            return Upload.LIST_IGNORE;
+        }
+
+        try {
+            message.loading({ content: 'Compressing image...', key: 'compression' });
+            const compressedFile = await compressImage(file, 1); // Compress to 1MB
+
+            setQrCodeFile(compressedFile);
+
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                setQrCodePreview(e.target?.result as string);
+                message.success({ content: 'Image ready', key: 'compression' });
+            };
+            reader.readAsDataURL(compressedFile);
+        } catch (error) {
+            console.error('Compression error:', error);
+            message.error({ content: 'Failed to process image', key: 'compression' });
+        }
+
+        return false; // Prevent auto upload
+    };
+
     const navigate = useNavigate();
 
     const createRequestMutation = useCreateRequest();
     const pickRequestMutation = usePickRequest();
 
     // Query for available withdrawals matching the amount (only active when searching for Deposit)
+    const [searchAmount, setSearchAmount] = useState<number | undefined>(undefined);
+
+    // Query for available withdrawals matching the amount (only active when searching for Deposit)
     const { data: availableData, isLoading: isSearching } = useAvailableRequests({
         page: 1,
         limit: 50,
-        // Removed amount filter to show all requests as per user requirement
-        // amount: searchAmount, 
+        minAmount: searchAmount,
         type: RequestType.WITHDRAWAL // To Deposit, we look for Withdrawals
     }, {
-        enabled: requestType === RequestType.DEPOSIT // Enable whenever in DEPOSIT mode, logic handles display
+        enabled: requestType === RequestType.DEPOSIT // Enable whenever in DEPOSIT mode
     });
 
     // Fetch admin bank details for fallback
     const { data: adminDetails } = useAdminBankDetails();
+    const { data: userData } = useCurrentUser();
 
     const onFinish = async (values: any) => {
         if (requestType === RequestType.DEPOSIT) {
-            // No action needed for DEPOSIT as the list is live and filtering is removed
+            // Trigger search with amount
+            setSearchAmount(Number(values.amount));
+            // refetch will happen automatically due to dependency change in useQuery key
             return;
         }
 
@@ -64,10 +112,13 @@ export const CreateRequest: React.FC = () => {
                 amount: Number(values.amount),
                 bankDetails: paymentMethod === PaymentMethod.BANK ? values.bankDetails : undefined,
                 upiId: paymentMethod === PaymentMethod.UPI ? values.upiId : undefined,
+                qrCode: paymentMethod === PaymentMethod.QR_CODE && qrCodePreview ? qrCodePreview : undefined,
             };
 
             await createRequestMutation.mutateAsync(payload);
             form.resetFields();
+            setQrCodeFile(null);
+            setQrCodePreview(null);
             // Stay on the same page after creating request
         } catch (error) {
             console.error('Failed to create request:', error);
@@ -202,10 +253,11 @@ export const CreateRequest: React.FC = () => {
     const matchingRequests = availableData?.requests?.data || [];
 
     // Determine if we should show admin fallback
-    // Show admin if: 1) no withdrawal requests available, OR 2) deposit amount > max available request amount
-    const shouldShowAdminFallback = requestType === RequestType.DEPOSIT && adminDetails && currentAmount && (
-        matchingRequests.length === 0 || // No requests available
-        Math.max(...matchingRequests.map((r: any) => r.amount)) < Number(currentAmount) // Amount too large
+    // Show admin if: 1) no matching withdrawal requests available, OR 2) deposit amount > max available request amount
+    // AND we are not searching
+    const shouldShowAdminFallback = requestType === RequestType.DEPOSIT && !isSearching && adminDetails && searchAmount && (
+        matchingRequests.length === 0 || // No requests >= amount found
+        Math.max(...matchingRequests.map((r: any) => r.amount)) < searchAmount // Amount too large
     );
 
     // State to track if admin request is being created
@@ -308,7 +360,43 @@ export const CreateRequest: React.FC = () => {
                             label={<span className="font-semibold text-slate-700">Amount</span>}
                             rules={[
                                 { required: true, message: 'Please enter amount!' },
+                                {
+                                    validator: (_, value) => {
+                                        if (!userData?.user) return Promise.resolve();
+
+                                        const amount = Number(value);
+                                        const config = userData.user.withdrawalLimitConfig || WithdrawalLimitConfig.GLOBAL;
+
+                                        if (config === WithdrawalLimitConfig.UNLIMITED) {
+                                            return Promise.resolve();
+                                        }
+
+                                        let limit = adminDetails?.maxWithdrawalLimit; // Default global fallback
+
+                                        if (config === WithdrawalLimitConfig.CUSTOM) {
+                                            limit = userData.user.maxWithdrawalLimit;
+                                        }
+
+                                        if (value && limit && amount > limit) {
+                                            return Promise.reject(new Error(`Amount cannot exceed limit: ₹${Number(limit).toLocaleString('en-IN')} (${config === WithdrawalLimitConfig.CUSTOM ? 'Custom' : 'Global'})`));
+                                        }
+                                        return Promise.resolve();
+                                    }
+                                }
                             ]}
+                            help={(() => {
+                                if (!userData?.user) return undefined;
+                                const config = userData.user.withdrawalLimitConfig || WithdrawalLimitConfig.GLOBAL;
+
+                                if (config === WithdrawalLimitConfig.UNLIMITED) return <span className="text-emerald-600 font-medium">Limit: Unlimited</span>;
+
+                                let limit = adminDetails?.maxWithdrawalLimit;
+                                if (config === WithdrawalLimitConfig.CUSTOM) {
+                                    limit = userData.user.maxWithdrawalLimit;
+                                }
+
+                                return limit ? `Maximum limit: ₹${limit.toLocaleString('en-IN')} (${config === WithdrawalLimitConfig.CUSTOM ? 'Custom' : 'Global'})` : undefined;
+                            })()}
                         >
                             <Input
                                 placeholder="Enter amount"
@@ -367,6 +455,17 @@ export const CreateRequest: React.FC = () => {
                                 >
                                     <QrCode className="text-lg" />
                                     UPI ID
+                                </button>
+                                <button
+                                    type="button"
+                                    className={`flex items-center gap-2 pb-3 px-1 ml-6 text-sm font-semibold transition-all border-b-2 ${paymentMethod === PaymentMethod.QR_CODE
+                                        ? 'border-indigo-600 text-indigo-600'
+                                        : 'border-transparent text-slate-500 hover:text-slate-700'
+                                        }`}
+                                    onClick={() => setPaymentMethod(PaymentMethod.QR_CODE)}
+                                >
+                                    <ImageIcon className="text-lg" />
+                                    QR Code
                                 </button>
                             </div>
 
@@ -447,6 +546,48 @@ export const CreateRequest: React.FC = () => {
                                     <p className="text-slate-400 text-xs mt-1">
                                         Ensure the UPI ID is linked to your account for faster processing.
                                     </p>
+                                </div>
+                            )}
+
+                            {/* QR Code Upload Field */}
+                            {paymentMethod === PaymentMethod.QR_CODE && (
+                                <div className="animate-fade-in">
+                                    <Form.Item
+                                        label={<span className="font-medium text-slate-600">Upload QR Code</span>}
+                                        required
+                                        className="mb-6"
+                                    >
+                                        <Upload
+                                            beforeUpload={handleQrCodeUpload}
+                                            showUploadList={false}
+                                            accept="image/jpeg,image/png"
+                                            maxCount={1}
+                                        >
+                                            <div className="flex flex-col items-center justify-center border-2 border-dashed border-slate-300 rounded-xl p-6 cursor-pointer hover:border-indigo-500 hover:bg-slate-50 transition-all w-full md:w-96 mx-auto">
+                                                {qrCodePreview ? (
+                                                    <div className="relative">
+                                                        <img src={qrCodePreview} alt="QR Code Preview" className="max-h-48 rounded-lg" />
+                                                        <div className="absolute inset-0 bg-black/50 opacity-0 hover:opacity-100 flex items-center justify-center rounded-lg transition-opacity text-white font-medium">
+                                                            Click to Change
+                                                        </div>
+                                                    </div>
+                                                ) : (
+                                                    <>
+                                                        <div className="p-3 bg-indigo-50 text-indigo-600 rounded-full mb-3">
+                                                            <UploadIcon size={24} />
+                                                        </div>
+                                                        <p className="text-slate-700 font-semibold mb-1">Click to Upload QR Code</p>
+                                                        <p className="text-slate-400 text-xs">Supports JPG, PNG (Max 2MB)</p>
+                                                    </>
+                                                )}
+                                            </div>
+                                        </Upload>
+                                    </Form.Item>
+                                    {!qrCodeFile && (
+                                        <p className="text-red-500 text-xs text-center">
+                                            Please upload a QR Code image.
+                                        </p>
+                                    )}
                                 </div>
                             )}
 
@@ -542,7 +683,7 @@ export const CreateRequest: React.FC = () => {
                                         </div>
                                         <div>
                                             <div className="flex items-center gap-2">
-                                                <span className="font-bold text-slate-800">₹{Number(currentAmount).toLocaleString()}</span>
+                                                <span className="font-bold text-slate-800">₹{searchAmount?.toLocaleString()}</span>
                                                 <span className="text-xs bg-purple-100 text-purple-700 font-bold px-2 py-0.5 rounded-full uppercase">ADMIN WITHDRAWAL</span>
                                             </div>
                                             <div className="flex items-center gap-2 mt-1">
@@ -559,7 +700,7 @@ export const CreateRequest: React.FC = () => {
                                         type="primary"
                                         onClick={() => openPickModal({
                                             id: 'admin-fallback',
-                                            amount: Number(currentAmount),
+                                            amount: searchAmount,
                                             createdBy: adminDetails,
                                             type: RequestType.WITHDRAWAL,
                                             status: 'PENDING'
@@ -833,6 +974,38 @@ UPI ID: ${pickedRequestDetails.upiId}`;
                             >
                                 Copy UPI Details
                             </Button>
+                        </div>
+                    )}
+
+                    {pickedRequestDetails?.qrCode && (
+                        <div className="bg-gradient-to-br from-teal-50 to-emerald-50 rounded-2xl p-6 border border-teal-100 mt-4">
+                            <h3 className="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
+                                <QrCode size={20} className="text-teal-600" />
+                                Review QR Code
+                            </h3>
+
+                            <div className="flex justify-center bg-white p-4 rounded-xl border border-slate-200">
+                                <Image
+                                    src={pickedRequestDetails.qrCode}
+                                    alt="Payment QR Code"
+                                    className="max-w-full max-h-64 object-contain rounded-lg"
+                                />
+                            </div>
+
+                            <a
+                                href={pickedRequestDetails.qrCode}
+                                download="payment-qr-code.png"
+                                className="block w-full"
+                            >
+                                <Button
+                                    type="primary"
+                                    block
+                                    size="large"
+                                    className="mt-4 h-11 rounded-xl bg-teal-600 hover:bg-teal-700 font-semibold"
+                                >
+                                    Download QR Code
+                                </Button>
+                            </a>
                         </div>
                     )}
 

@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { Table, Button, Modal, Form, Upload, message, Tabs, Space, Dropdown, Image, Spin, Input } from 'antd';
-import { Upload as UploadIcon, Check, X, Copy, Eye, MoreVertical, CheckCircle, XCircle, AlertTriangle, RotateCcw, AlertCircle, Trash2 } from 'lucide-react';
+import { Table, Button, Modal, Form, Upload, message, Space, Dropdown, Image, Spin, Input, Select, DatePicker } from 'antd';
+import { useLocation, useNavigate } from 'react-router-dom';
+import { Upload as UploadIcon, Check, X, Copy, Eye, MoreVertical, CheckCircle, XCircle, AlertTriangle, RotateCcw, AlertCircle, Trash2, QrCode } from 'lucide-react';
 import type { ColumnsType } from 'antd/es/table';
 import { Request, RequestStatus, RequestType } from '../types';
 import { compressImage } from '../utils/imageUtils';
 import {
     useCreatedRequests,
     usePickedRequests,
-    useMyRequestsCounts,
     useUploadPaymentSlip,
     useVerifyPayment,
     useReportPaymentFailure,
@@ -17,10 +17,14 @@ import {
 } from '../hooks/useRequests';
 import { requestAPI } from '../services/apiService';
 
-const { TabPane } = Tabs;
 
 export const MyRequests: React.FC = () => {
-    const [activeTab, setActiveTab] = useState('created');
+    const location = useLocation();
+    const navigate = useNavigate();
+
+    // Determine active view based on URL
+    const isPickedView = location.pathname.includes('picked-requests');
+
     const [createdPage, setCreatedPage] = useState(1);
     const [createdLimit, setCreatedLimit] = useState(10);
     const [pickedPage, setPickedPage] = useState(1);
@@ -32,12 +36,26 @@ export const MyRequests: React.FC = () => {
     const [selectedRequest, setSelectedRequest] = useState<Request | null>(null);
     const [rejectionReason, setRejectionReason] = useState('');
     const [form] = Form.useForm();
-    const { data: createdData, refetch: refetchCreated, isLoading: createdLoading } = useCreatedRequests(createdPage, createdLimit, activeTab === 'created');
-    const { data: pickedRequestsData, refetch: refetchPicked, isLoading: pickedLoading } = usePickedRequests(pickedPage, pickedLimit, activeTab === 'picked');
+
+    // Filter states
+    const [statusFilter, setStatusFilter] = useState<string | undefined>(undefined);
+    const [dateRange, setDateRange] = useState<[string, string] | undefined>(undefined);
+
+    // Only fetch the data needed for the current view
+    const { data: createdData, refetch: refetchCreated, isLoading: createdLoading } = useCreatedRequests(createdPage, createdLimit, !isPickedView, {
+        startDate: dateRange?.[0],
+        endDate: dateRange?.[1],
+        status: statusFilter
+    });
+    const { data: pickedRequestsData, refetch: refetchPicked, isLoading: pickedLoading } = usePickedRequests(pickedPage, pickedLimit, isPickedView, {
+        startDate: dateRange?.[0],
+        endDate: dateRange?.[1],
+        status: statusFilter
+    });
     const { data: detailedRequest, isLoading: isDetailsLoading } = useRequestDetails(selectedRequest?.id || '', !!selectedRequest?.id);
 
 
-    const { data: countsData } = useMyRequestsCounts();
+
     const uploadMutation = useUploadPaymentSlip();
     const verifyMutation = useVerifyPayment();
     const reportFailureMutation = useReportPaymentFailure();
@@ -74,8 +92,6 @@ export const MyRequests: React.FC = () => {
     const createdMeta = createdData?.createdRequests?.meta || { page: 1, limit: 10, total: 0, totalPages: 0, hasNextPage: false, hasPreviousPage: false };
     const pickedRequests = pickedRequestsData?.pickedRequests?.data || [];
     const pickedMeta = pickedRequestsData?.pickedRequests?.meta || { page: 1, limit: 10, total: 0, totalPages: 0, hasNextPage: false, hasPreviousPage: false };
-    const createdCount = countsData?.createdCount || 0;
-    const pickedCount = countsData?.pickedCount || 0;
 
     const handleCreatedTableChange = (pagination: any) => {
         setCreatedPage(pagination.current);
@@ -85,10 +101,6 @@ export const MyRequests: React.FC = () => {
     const handlePickedTableChange = (pagination: any) => {
         setPickedPage(pagination.current);
         setPickedLimit(pagination.pageSize);
-    };
-
-    const handleTabChange = (key: string) => {
-        setActiveTab(key);
     };
 
     // Helper function to view payment slip
@@ -563,6 +575,26 @@ export const MyRequests: React.FC = () => {
                     );
                 }
 
+                if (record.qrCode) {
+                    return (
+                        <div className="flex flex-col gap-1">
+                            <div className="flex items-center gap-2">
+                                <span className="text-sm font-medium text-gray-900">
+                                    QR Code Available
+                                </span>
+                                <Eye
+                                    className="text-indigo-600 cursor-pointer hover:text-indigo-800"
+                                    onClick={() => {
+                                        setSelectedRequest(record);
+                                        setBankDetailsModalVisible(true);
+                                    }}
+                                />
+                            </div>
+                            <span className="text-xs text-slate-500 font-medium">Scan to Pay</span>
+                        </div>
+                    );
+                }
+
                 return <span className="text-gray-400">-</span>;
             },
             width: 250,
@@ -694,52 +726,103 @@ export const MyRequests: React.FC = () => {
     return (
         <div >
             {/* Header */}
+            {/* Header */}
             <div className="mb-6">
-                <h1 className="text-3xl font-bold tracking-tight text-slate-900 mb-2">My Requests</h1>
-                <p className="text-slate-600">Manage your created and picked requests</p>
+                <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                    <div>
+                        <h1 className="text-3xl font-bold tracking-tight text-slate-900 mb-2">
+                            {location.pathname.includes('picked-requests') ? 'Picked Requests' : 'Created Requests'}
+                        </h1>
+                        <p className="text-slate-600">
+                            {location.pathname.includes('picked-requests')
+                                ? 'Manage requests you have picked to fulfill'
+                                : 'Manage requests you have created'}
+                        </p>
+                    </div>
+
+                    <div className="flex flex-col gap-3 md:flex-row md:items-center">
+                        <Select
+                            placeholder="Filter by Status"
+                            value={statusFilter}
+                            onChange={setStatusFilter}
+                            className="w-40"
+                            allowClear
+                        >
+                            <Select.Option value={RequestStatus.PENDING}>Pending</Select.Option>
+                            <Select.Option value={RequestStatus.PICKED}>Picked</Select.Option>
+                            <Select.Option value={RequestStatus.PAID_FULL}>Paid Full</Select.Option>
+                            <Select.Option value={RequestStatus.PAID_PARTIAL}>Paid Partial</Select.Option>
+                            <Select.Option value={RequestStatus.COMPLETED}>Completed</Select.Option>
+                            <Select.Option value={RequestStatus.REJECTED}>Rejected</Select.Option>
+                            <Select.Option value={RequestStatus.PAYMENT_FAILED}>Payment Failed</Select.Option>
+                        </Select>
+
+                        <DatePicker.RangePicker
+                            onChange={(dates) => {
+                                if (dates && dates[0] && dates[1]) {
+                                    setDateRange([
+                                        dates[0].startOf('day').toISOString(),
+                                        dates[1].endOf('day').toISOString()
+                                    ]);
+                                } else {
+                                    setDateRange(undefined);
+                                }
+                            }}
+                            className="w-60"
+                        />
+
+                        {!location.pathname.includes('picked-requests') && (
+                            <Button
+                                type="primary"
+                                icon={<UploadIcon size={18} />}
+                                onClick={() => navigate('/vendor/create-request')}
+                                className="bg-indigo-600 hover:bg-indigo-700 h-10 px-4 rounded-lg font-semibold shadow-sm border-none flex items-center gap-2"
+                            >
+                                Create Request
+                            </Button>
+                        )}
+                    </div>
+                </div>
             </div>
 
-            {/* Tabs with Tables */}
-            <Tabs defaultActiveKey="created" activeKey={activeTab} onChange={handleTabChange}>
-                <TabPane tab={`Created by Me (${createdCount})`} key="created">
-                    <Table
-                        columns={createdColumns}
-                        dataSource={createdRequests}
-                        rowKey="id"
-                        loading={createdLoading}
-                        onChange={handleCreatedTableChange}
-                        pagination={{
-                            current: createdMeta.page,
-                            pageSize: createdMeta.limit,
-                            total: createdMeta.total,
-                            showTotal: (total) => `Total ${total} requests`,
-                            showSizeChanger: true,
-                            pageSizeOptions: ['10', '20', '50', '100'],
-                        }}
-                        className="bg-white rounded-lg border border-slate-200"
-                        scroll={{ x: 'max-content' }}
-                    />
-                </TabPane>
-                <TabPane tab={`Picked by Me (${pickedCount})`} key="picked">
-                    <Table
-                        columns={pickedColumns}
-                        dataSource={pickedRequests}
-                        rowKey="id"
-                        loading={pickedLoading}
-                        onChange={handlePickedTableChange}
-                        pagination={{
-                            current: pickedMeta.page,
-                            pageSize: pickedMeta.limit,
-                            total: pickedMeta.total,
-                            showTotal: (total) => `Total ${total} requests`,
-                            showSizeChanger: true,
-                            pageSizeOptions: ['10', '20', '50', '100'],
-                        }}
-                        className="bg-white rounded-lg border border-slate-200"
-                        scroll={{ x: 'max-content' }}
-                    />
-                </TabPane>
-            </Tabs>
+            {/* Content based on URL */}
+            {location.pathname.includes('picked-requests') ? (
+                <Table
+                    columns={pickedColumns}
+                    dataSource={pickedRequests}
+                    rowKey="id"
+                    loading={pickedLoading}
+                    onChange={handlePickedTableChange}
+                    pagination={{
+                        current: pickedMeta.page,
+                        pageSize: pickedMeta.limit,
+                        total: pickedMeta.total,
+                        showTotal: (total) => `Total ${total} requests`,
+                        showSizeChanger: true,
+                        pageSizeOptions: ['10', '20', '50', '100'],
+                    }}
+                    className="bg-white rounded-lg border border-slate-200"
+                    scroll={{ x: 'max-content' }}
+                />
+            ) : (
+                <Table
+                    columns={createdColumns}
+                    dataSource={createdRequests}
+                    rowKey="id"
+                    loading={createdLoading}
+                    onChange={handleCreatedTableChange}
+                    pagination={{
+                        current: createdMeta.page,
+                        pageSize: createdMeta.limit,
+                        total: createdMeta.total,
+                        showTotal: (total) => `Total ${total} requests`,
+                        showSizeChanger: true,
+                        pageSizeOptions: ['10', '20', '50', '100'],
+                    }}
+                    className="bg-white rounded-lg border border-slate-200"
+                    scroll={{ x: 'max-content' }}
+                />
+            )}
 
             {/* Upload Payment Slip Modal */}
             <Modal
@@ -1082,7 +1165,7 @@ export const MyRequests: React.FC = () => {
                 styles={{ content: { borderRadius: '16px', padding: '24px' } }}
                 closeIcon={<X className="text-gray-400 text-lg" />}
             >
-                {(selectedRequest?.bankDetails || selectedRequest?.upiId) && (
+                {(selectedRequest?.bankDetails || selectedRequest?.upiId || selectedRequest?.qrCode) && (
                     <div className="mt-6 flex flex-col gap-4">
                         {selectedRequest.bankDetails && (
                             <div className="bg-slate-50 rounded-xl p-5 border border-slate-100">
@@ -1117,15 +1200,45 @@ export const MyRequests: React.FC = () => {
                             </div>
                         )}
 
+                        {selectedRequest.qrCode && (
+                            <div className="bg-gradient-to-br from-teal-50 to-emerald-50 rounded-xl p-5 border border-teal-100">
+                                <h3 className="text-sm font-bold text-slate-800 mb-3 flex items-center gap-2">
+                                    <QrCode size={16} className="text-teal-600" />
+                                    Scan QR to Pay
+                                </h3>
+                                <div className="flex justify-center bg-white p-3 rounded-xl border border-slate-200 mb-3">
+                                    <Image
+                                        src={selectedRequest.qrCode}
+                                        alt="Payment QR Code"
+                                        className="max-w-full max-h-48 object-contain rounded-lg"
+                                    />
+                                </div>
+                                <a
+                                    href={selectedRequest.qrCode}
+                                    download="payment-qr-code.png"
+                                    className="block w-full"
+                                >
+                                    <Button
+                                        block
+                                        className="h-9 rounded-lg border-teal-200 text-teal-700 font-semibold hover:bg-teal-50 hover:border-teal-300 hover:text-teal-800"
+                                    >
+                                        Download QR Code
+                                    </Button>
+                                </a>
+                            </div>
+                        )}
+
                         <div className="flex gap-3 pt-2">
-                            <Button
-                                type="primary"
-                                icon={<Copy size={18} />}
-                                onClick={copyAllBankDetails}
-                                className="flex-1 h-11 bg-[#5B63E6] hover:bg-[#4c54d6] border-none shadow-lg shadow-indigo-100 rounded-xl font-bold"
-                            >
-                                Copy All Details
-                            </Button>
+                            {selectedRequest && (selectedRequest.bankDetails || selectedRequest.upiId) && (
+                                <Button
+                                    type="primary"
+                                    icon={<Copy size={18} />}
+                                    onClick={copyAllBankDetails}
+                                    className="flex-1 h-11 bg-[#5B63E6] hover:bg-[#4c54d6] border-none shadow-lg shadow-indigo-100 rounded-xl font-bold"
+                                >
+                                    Copy All Details
+                                </Button>
+                            )}
                             <Button
                                 onClick={() => setBankDetailsModalVisible(false)}
                                 className="px-6 h-11 rounded-xl border-gray-200 text-gray-600 font-medium hover:text-gray-800 hover:border-gray-300"

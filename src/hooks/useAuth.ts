@@ -40,6 +40,23 @@ export const useCreateVendor = () => {
     });
 };
 
+export const useUpdateVendor = () => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: async ({ id, data }: { id: string; data: { name?: string; withdrawalLimitConfig?: string; maxWithdrawalLimit?: number | null } }) => {
+            const response = await authAPI.updateVendor(id, data);
+            return response.data;
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['vendors'] });
+            message.success('Vendor updated successfully!');
+        },
+        onError: (error: any) => {
+            message.error(error.response?.data?.message || 'Failed to update vendor');
+        },
+    });
+};
+
 export const useAllVendors = (page = 1, limit = 10) => {
     return useQuery({
         queryKey: ['vendors', 'list', page, limit],

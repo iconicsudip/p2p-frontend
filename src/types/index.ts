@@ -41,7 +41,10 @@ export interface User {
     role: UserRole;
     bankDetails?: BankDetails;
     upiId?: string;
+    qrCode?: string;
     mustResetPassword?: boolean;
+    maxWithdrawalLimit?: number;
+    withdrawalLimitConfig?: WithdrawalLimitConfig;
     createdAt?: string;
 }
 
@@ -59,6 +62,7 @@ export interface Request {
     status: RequestStatus;
     bankDetails?: BankDetails;
     upiId?: string;
+    qrCode?: string;
     paidAmount: number;
     pendingAmount: number;
     rejectionReason?: string;
@@ -142,6 +146,12 @@ export interface LoginResponse {
     user: User;
 }
 
+export enum WithdrawalLimitConfig {
+    GLOBAL = 'GLOBAL',
+    CUSTOM = 'CUSTOM',
+    UNLIMITED = 'UNLIMITED',
+}
+
 export interface CreateVendorRequest {
     username: string;
     password: string;
@@ -149,6 +159,9 @@ export interface CreateVendorRequest {
     email?: string;
     bankDetails?: BankDetails;
     upiId?: string;
+    qrCode?: string;
+    withdrawalLimitConfig?: WithdrawalLimitConfig;
+    maxWithdrawalLimit?: number;
 }
 
 export interface CreateRequestRequest {
@@ -156,6 +169,7 @@ export interface CreateRequestRequest {
     amount: number;
     bankDetails?: BankDetails;
     upiId?: string;
+    qrCode?: string;
 }
 
 export interface VerifyPaymentRequest {

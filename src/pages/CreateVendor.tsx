@@ -11,7 +11,8 @@ import {
     EyeOff
 } from 'lucide-react';
 import { useCreateVendor } from '../hooks/useAuth';
-import { CreateVendorRequest } from '../types';
+import { CreateVendorRequest, WithdrawalLimitConfig } from '../types';
+import { Radio } from 'antd'; // Add Radio
 
 export const CreateVendor: React.FC = () => {
     const [form] = Form.useForm();
@@ -119,64 +120,56 @@ export const CreateVendor: React.FC = () => {
                         />
                     </Form.Item>
 
-                    {/* Banking Header */}
-                    <div className="mt-8 mb-6 border-b border-indigo-50 pb-2">
-                        <span className="text-xs font-bold text-indigo-500 tracking-wider uppercase">Banking Information</span>
+
+                    {/* Withdrawal Limit Configuration */}
+                    <div className="mt-8 mb-6">
+                        <h3 className="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
+                            Withdrawal Limit Configuration
+                        </h3>
+                        <div className="bg-slate-50 p-6 rounded-xl border border-slate-100">
+                            <Form.Item
+                                name="withdrawalLimitConfig"
+                                initialValue={WithdrawalLimitConfig.GLOBAL}
+                                className="mb-4"
+                            >
+                                <Radio.Group className="flex flex-col gap-3">
+                                    <Radio value={WithdrawalLimitConfig.GLOBAL} className="font-medium text-slate-700">
+                                        Use Global Admin Limit <span className="text-slate-400 font-normal text-sm ml-2">(Default)</span>
+                                    </Radio>
+                                    <Radio value={WithdrawalLimitConfig.UNLIMITED} className="font-medium text-slate-700">
+                                        Unlimited Withdrawal <span className="text-slate-400 font-normal text-sm ml-2">(No Limit)</span>
+                                    </Radio>
+                                    <Radio value={WithdrawalLimitConfig.CUSTOM} className="font-medium text-slate-700">
+                                        Set Custom Limit
+                                    </Radio>
+                                </Radio.Group>
+                            </Form.Item>
+
+                            <Form.Item
+                                noStyle
+                                shouldUpdate={(prevValues, currentValues) => prevValues.withdrawalLimitConfig !== currentValues.withdrawalLimitConfig}
+                            >
+                                {({ getFieldValue }) =>
+                                    getFieldValue('withdrawalLimitConfig') === WithdrawalLimitConfig.CUSTOM ? (
+                                        <Form.Item
+                                            name="maxWithdrawalLimit"
+                                            label={<span className="font-bold text-slate-700 text-sm">Custom Withdrawal Limit (₹)</span>}
+                                            rules={[{ required: true, message: 'Please enter a custom limit!' }]}
+                                            className="mb-0 pl-7 animate-fade-in"
+                                        >
+                                            <Input
+                                                type="number"
+                                                placeholder="Enter amount"
+                                                prefix="₹"
+                                                className="bg-white border-slate-200 hover:border-indigo-500 focus:border-indigo-500 rounded-xl px-4 py-3 w-full max-w-xs"
+                                            />
+                                        </Form.Item>
+                                    ) : null
+                                }
+                            </Form.Item>
+                        </div>
                     </div>
 
-                    {/* Banking Grid */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-2">
-                        <Form.Item
-                            label={<span className="font-bold text-slate-700 text-sm">Account Number</span>}
-                            name={['bankDetails', 'accountNumber']}
-                        >
-                            <Input
-                                placeholder="Enter account number"
-                                className="bg-slate-50 border-transparent hover:bg-slate-100 focus:bg-white focus:border-indigo-500 rounded-xl px-4 py-3"
-                            />
-                        </Form.Item>
-
-                        <Form.Item
-                            label={<span className="font-bold text-slate-700 text-sm">Routing Number / IFSC</span>}
-                            name={['bankDetails', 'ifscCode']}
-                        >
-                            <Input
-                                placeholder="Branch code"
-                                className="bg-slate-50 border-transparent hover:bg-slate-100 focus:bg-white focus:border-indigo-500 rounded-xl px-4 py-3"
-                            />
-                        </Form.Item>
-
-                        <Form.Item
-                            label={<span className="font-bold text-slate-700 text-sm">Bank Name</span>}
-                            name={['bankDetails', 'bankName']}
-                        >
-                            <Input
-                                placeholder="Financial Institution"
-                                className="bg-slate-50 border-transparent hover:bg-slate-100 focus:bg-white focus:border-indigo-500 rounded-xl px-4 py-3"
-                            />
-                        </Form.Item>
-
-                        <Form.Item
-                            label={<span className="font-bold text-slate-700 text-sm">Account Holder Name</span>}
-                            name={['bankDetails', 'accountHolderName']}
-                        >
-                            <Input
-                                placeholder="Official account name"
-                                className="bg-slate-50 border-transparent hover:bg-slate-100 focus:bg-white focus:border-indigo-500 rounded-xl px-4 py-3"
-                            />
-                        </Form.Item>
-                    </div>
-
-                    <Form.Item
-                        label={<span className="font-bold text-slate-700 text-sm">UPI ID</span>}
-                        name="upiId"
-                        className="mt-2"
-                    >
-                        <Input
-                            placeholder="username@upi"
-                            className="bg-slate-50 border-transparent hover:bg-slate-100 focus:bg-white focus:border-indigo-500 rounded-xl px-4 py-3"
-                        />
-                    </Form.Item>
 
                     {/* Action Buttons */}
                     <div className="flex items-center justify-end gap-4 mt-12 mb-2">
@@ -236,7 +229,7 @@ export const CreateVendor: React.FC = () => {
                                 <Button
                                     type="text"
                                     icon={<Copy className="text-slate-400 hover:text-indigo-electric w-4 h-4" />}
-                                    onClick={() => createdCredentials && copyToClipboard(createdCredentials.username, 'Username')}
+                                    onClick={() => createdCredentials && copyToClipboard(createdCredentials.username.toLowerCase(), 'Username')}
                                 />
                             </Tooltip>
                         </div>
@@ -261,6 +254,6 @@ export const CreateVendor: React.FC = () => {
                     <p>Make sure to copy these credentials now. You can also view them later from the Vendors List credentials action.</p>
                 </div>
             </Modal>
-        </div>
+        </div >
     );
 };

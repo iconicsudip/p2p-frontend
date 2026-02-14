@@ -12,6 +12,7 @@ import {
     Menu,
     X,
     Settings,
+    CheckCircle,
 } from 'lucide-react';
 import { useNavigate, useLocation, Outlet } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
@@ -55,10 +56,18 @@ export const DashboardLayout: React.FC = () => {
         {
             key: '/vendor/my-requests',
             icon: <FileText size={18} />,
-            label: 'My Requests',
+            label: 'Created Requests',
             color: 'text-violet-500',
             bgColor: 'bg-violet-50',
             activeColor: 'text-violet-600'
+        },
+        {
+            key: '/vendor/picked-requests',
+            icon: <CheckCircle size={18} />,
+            label: 'Picked Requests',
+            color: 'text-teal-500',
+            bgColor: 'bg-teal-50',
+            activeColor: 'text-teal-600'
         },
         {
             key: '/vendor/notifications',
@@ -130,10 +139,18 @@ export const DashboardLayout: React.FC = () => {
         {
             key: '/admin/my-requests',
             icon: <FileText size={18} />,
-            label: 'My Requests',
+            label: 'Created Requests',
             color: 'text-violet-500',
             bgColor: 'bg-violet-50',
             activeColor: 'text-violet-600'
+        },
+        {
+            key: '/admin/picked-requests',
+            icon: <CheckCircle size={18} />,
+            label: 'Picked Requests',
+            color: 'text-teal-500',
+            bgColor: 'bg-teal-50',
+            activeColor: 'text-teal-600'
         },
         {
             key: '/admin/notifications',

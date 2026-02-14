@@ -3,7 +3,7 @@ import { requestAPI, authAPI } from '../services/apiService';
 import { message } from 'antd';
 
 // Fetch available requests
-export const useAvailableRequests = (params: { page?: number; limit?: number; amount?: number; type?: string } = { page: 1, limit: 10 }, options?: { enabled?: boolean }) => {
+export const useAvailableRequests = (params: { page?: number; limit?: number; amount?: number; minAmount?: number; type?: string } = { page: 1, limit: 10 }, options?: { enabled?: boolean }) => {
     return useQuery({
         queryKey: ['requests', 'available', params],
         queryFn: async () => {
@@ -16,7 +16,7 @@ export const useAvailableRequests = (params: { page?: number; limit?: number; am
 
 
 // Fetch created requests
-export const useCreatedRequests = (page = 1, limit = 10, enabled = true, filters?: { startDate?: string; endDate?: string }) => {
+export const useCreatedRequests = (page = 1, limit = 10, enabled = true, filters?: { startDate?: string; endDate?: string; status?: string }) => {
     return useQuery({
         queryKey: ['requests', 'created', page, limit, filters],
         queryFn: async () => {
@@ -28,7 +28,7 @@ export const useCreatedRequests = (page = 1, limit = 10, enabled = true, filters
 };
 
 // Fetch picked requests
-export const usePickedRequests = (page = 1, limit = 10, enabled = true, filters?: { startDate?: string; endDate?: string }) => {
+export const usePickedRequests = (page = 1, limit = 10, enabled = true, filters?: { startDate?: string; endDate?: string; status?: string }) => {
     return useQuery({
         queryKey: ['requests', 'picked', page, limit, filters],
         queryFn: async () => {
@@ -64,6 +64,7 @@ export const usePickRequest = () => {
             queryClient.invalidateQueries({ queryKey: ['requests', 'available'] });
             queryClient.invalidateQueries({ queryKey: ['requests', 'picked'] });
             queryClient.invalidateQueries({ queryKey: ['requests', 'counts'] });
+            queryClient.invalidateQueries({ queryKey: ['requests', 'admin-all'] });
             message.success('Request picked successfully!');
         },
         onError: (error: any) => {
@@ -264,7 +265,7 @@ export const useUpdateAdminBankDetails = () => {
     const queryClient = useQueryClient();
 
     return useMutation({
-        mutationFn: async (data: { bankDetails?: any; upiId?: string }) => {
+        mutationFn: async (data: { bankDetails?: any; upiId?: string; qrCode?: string; maxWithdrawalLimit?: number }) => {
             const response = await authAPI.updateAdminBankDetails(data);
             return response.data;
         },

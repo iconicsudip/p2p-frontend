@@ -28,8 +28,9 @@ export const BankDetailsAlert: React.FC = () => {
         adminDetails.bankDetails.accountHolderName
     );
     const hasUpiId = adminDetails?.upiId;
+    const hasQrCode = adminDetails?.qrCode;
 
-    const isMissing = !hasBankDetails && !hasUpiId;
+    const isMissing = !hasBankDetails && !hasUpiId && !hasQrCode;
 
     if (isLoading || !isMissing || dismissed) {
         return null;

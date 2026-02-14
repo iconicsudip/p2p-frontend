@@ -109,9 +109,9 @@ export const SuperAdminDashboard: React.FC = () => {
             render: (text: string) => <span className="font-semibold text-slate-700">{text}</span>
         },
         {
-            title: 'EMAIL',
-            dataIndex: ['vendor', 'email'],
-            key: 'email',
+            title: 'USERNAME',
+            dataIndex: ['vendor', 'username'],
+            key: 'username',
             render: (text: string) => <span className="text-slate-500">{text}</span>
         },
         {

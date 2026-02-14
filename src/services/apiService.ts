@@ -29,10 +29,13 @@ export const authAPI = {
 
     getVendorCredentials: (id: string) => api.get(`/auth/vendors/${id}/credentials`),
 
-    getAdminBankDetails: () =>
-        api.get<{ admin: { name: string; bankDetails?: any; upiId?: string } }>('/auth/admin/bank-details'),
+    updateVendor: (id: string, data: { name?: string; withdrawalLimitConfig?: string; maxWithdrawalLimit?: number | null }) =>
+        api.put<{ message: string; vendor: User }>(`/auth/vendors/${id}`, data),
 
-    updateAdminBankDetails: (data: { bankDetails?: any; upiId?: string }) =>
+    getAdminBankDetails: () =>
+        api.get<{ admin: { name: string; bankDetails?: any; upiId?: string; qrCode?: string; maxWithdrawalLimit?: number } }>('/auth/admin/bank-details'),
+
+    updateAdminBankDetails: (data: { bankDetails?: any; upiId?: string; qrCode?: string; maxWithdrawalLimit?: number }) =>
         api.put('/auth/admin/bank-details', data),
 
     resetPassword: (currentPassword: string, newPassword: string) =>
@@ -41,11 +44,7 @@ export const authAPI = {
     resetUserPassword: (userId: string, newPassword: string) =>
         api.post<{ message: string }>('/auth/admin/reset-password', { userId, newPassword }),
 
-    checkUsernameAvailability: (username: string) =>
-        api.get<{ available: boolean }>(`/auth/check-username/${username}`),
 
-    updateProfile: (data: { name: string; username: string }) =>
-        api.put<{ message: string; user: User }>('/auth/profile', data),
 
     forgotPassword: (username: string, newPassword: string) =>
         api.post<{ message: string }>('/auth/forgot-password', { username, newPassword }),
@@ -77,14 +76,14 @@ export const requestAPI = {
     getMyRequestsCounts: () =>
         api.get<{ createdCount: number; pickedCount: number }>('/requests/my-requests/counts'),
 
-    getCreatedRequests: (params?: { page?: number; limit?: number; startDate?: string; endDate?: string }) =>
+    getCreatedRequests: (params?: { page?: number; limit?: number; startDate?: string; endDate?: string; status?: string }) =>
         api.get<{ createdRequests: PaginatedResponse<Request> }>('/requests/my-requests', {
-            params: { createdPage: params?.page || 1, limit: params?.limit || 10, startDate: params?.startDate, endDate: params?.endDate }
+            params: { createdPage: params?.page || 1, limit: params?.limit || 10, startDate: params?.startDate, endDate: params?.endDate, status: params?.status }
         }),
 
-    getPickedRequests: (params?: { page?: number; limit?: number; startDate?: string; endDate?: string }) =>
+    getPickedRequests: (params?: { page?: number; limit?: number; startDate?: string; endDate?: string; status?: string }) =>
         api.get<{ pickedRequests: PaginatedResponse<Request> }>('/requests/my-requests', {
-            params: { pickedPage: params?.page || 1, limit: params?.limit || 10, startDate: params?.startDate, endDate: params?.endDate }
+            params: { pickedPage: params?.page || 1, limit: params?.limit || 10, startDate: params?.startDate, endDate: params?.endDate, status: params?.status }
         }),
 
     pickRequest: (id: string, amount?: number) =>

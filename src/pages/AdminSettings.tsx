@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from 'react';
-import { Form, Input, Button, Card, message } from 'antd';
-import { Building2, CreditCard, Save, Lock } from 'lucide-react';
+import { Form, Input, Button, Card, message, Upload } from 'antd';
+import { Building2, CreditCard, Save, Lock, Image as ImageIcon, Upload as UploadIcon, Banknote } from 'lucide-react';
 import { useAdminBankDetails, useUpdateAdminBankDetails } from '../hooks/useRequests';
 import { authAPI } from '../services/apiService';
+import { compressImage } from '../utils/imageUtils';
 
 export const AdminSettings: React.FC = () => {
     const [form] = Form.useForm();
@@ -10,6 +11,36 @@ export const AdminSettings: React.FC = () => {
     const { data: adminDetails, isLoading } = useAdminBankDetails();
     const updateMutation = useUpdateAdminBankDetails();
     const [passwordLoading, setPasswordLoading] = useState(false);
+
+
+
+    // QR Code state
+    const [qrCodePreview, setQrCodePreview] = useState<string | null>(null);
+
+    const handleQrCodeUpload = async (file: File) => {
+        const isJpgOrPng = file.type === 'image/jpeg' || file.type === 'image/png';
+        if (!isJpgOrPng) {
+            message.error('You can only upload JPG/PNG file!');
+            return Upload.LIST_IGNORE;
+        }
+
+        try {
+            message.loading({ content: 'Compressing image...', key: 'compression' });
+            const compressedFile = await compressImage(file, 1); // Compress to 1MB
+
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                setQrCodePreview(e.target?.result as string);
+                message.success({ content: 'Image ready', key: 'compression' });
+            };
+            reader.readAsDataURL(compressedFile);
+        } catch (error) {
+            console.error('Compression error:', error);
+            message.error({ content: 'Failed to process image', key: 'compression' });
+        }
+
+        return false; // Prevent auto upload
+    };
 
     // Pre-populate form with existing details
     useEffect(() => {
@@ -20,12 +51,16 @@ export const AdminSettings: React.FC = () => {
                 bankName: adminDetails.bankDetails?.bankName || '',
                 accountHolderName: adminDetails.bankDetails?.accountHolderName || '',
                 upiId: adminDetails.upiId || '',
+                maxWithdrawalLimit: adminDetails.maxWithdrawalLimit || '',
             });
+            if (adminDetails.qrCode) {
+                setQrCodePreview(adminDetails.qrCode);
+            }
         }
     }, [adminDetails, form]);
 
     const onFinish = async (values: any) => {
-        const { accountNumber, ifscCode, bankName, accountHolderName, upiId } = values;
+        const { accountNumber, ifscCode, bankName, accountHolderName, upiId, maxWithdrawalLimit } = values;
 
         const bankDetails = (accountNumber || ifscCode || bankName || accountHolderName) ? {
             accountNumber,
@@ -37,6 +72,8 @@ export const AdminSettings: React.FC = () => {
         await updateMutation.mutateAsync({
             bankDetails,
             upiId: upiId || undefined,
+            qrCode: qrCodePreview || undefined,
+            maxWithdrawalLimit: maxWithdrawalLimit === '' ? undefined : Number(maxWithdrawalLimit),
         });
     };
 
@@ -169,10 +206,41 @@ export const AdminSettings: React.FC = () => {
                     onFinish={onFinish}
                     className="space-y-6"
                 >
-                    {/* Bank Details Card */}
+                    {/* Withdrawal Settings Card */}
                     <Card
                         bordered={false}
                         className="shadow-sm border border-slate-200 rounded-2xl overflow-hidden"
+                    >
+                        <div className="flex items-center gap-3 mb-6 pb-4 border-b border-slate-100">
+                            <div className="p-3 bg-emerald-50 text-emerald-600 rounded-xl">
+                                <Banknote size={24} />
+                            </div>
+                            <div>
+                                <h2 className="text-xl font-bold text-slate-800">Withdrawal Settings</h2>
+                                <p className="text-sm text-slate-500">Set limits for vendor withdrawals</p>
+                            </div>
+                        </div>
+
+                        <Form.Item
+                            label={<span className="text-slate-700 font-semibold">Maximum Withdrawal Limit (₹)</span>}
+                            name="maxWithdrawalLimit"
+                            rules={[{ required: false }]}
+                            help="Leave empty for no limit"
+                        >
+                            <Input
+                                type="number"
+                                placeholder="Enter maximum withdrawal amount"
+                                className="h-11 rounded-xl border-slate-300 hover:border-emerald-400 focus:border-emerald-500"
+                                size="large"
+                                prefix="₹"
+                            />
+                        </Form.Item>
+                    </Card>
+
+                    {/* Bank Details Card */}
+                    <Card
+                        bordered={false}
+                        className="shadow-sm border border-slate-200 rounded-2xl overflow-hidden !mt-6"
                     >
                         <div className="flex items-center gap-3 mb-6 pb-4 border-b border-slate-100">
                             <div className="p-3 bg-indigo-50 text-indigo-600 rounded-xl">
@@ -263,6 +331,52 @@ export const AdminSettings: React.FC = () => {
                                 className="h-11 rounded-xl border-slate-300 hover:border-purple-400 focus:border-purple-500"
                                 size="large"
                             />
+                        </Form.Item>
+                    </Card>
+
+                    {/* QR Code Card */}
+                    <Card
+                        bordered={false}
+                        className="shadow-sm border border-slate-200 rounded-2xl overflow-hidden !mt-6"
+                    >
+                        <div className="flex items-center gap-3 mb-6 pb-4 border-b border-slate-100">
+                            <div className="p-3 bg-teal-50 text-teal-600 rounded-xl">
+                                <ImageIcon size={24} />
+                            </div>
+                            <div>
+                                <h2 className="text-xl font-bold text-slate-800">QR Code</h2>
+                                <p className="text-sm text-slate-500">Upload your payment QR Code</p>
+                            </div>
+                        </div>
+
+                        <Form.Item
+                            label={<span className="text-slate-700 font-semibold">Upload QR Code</span>}
+                        >
+                            <Upload
+                                beforeUpload={handleQrCodeUpload}
+                                showUploadList={false}
+                                accept="image/jpeg,image/png"
+                                maxCount={1}
+                            >
+                                <div className="flex flex-col items-center justify-center border-2 border-dashed border-slate-300 rounded-xl p-6 cursor-pointer hover:border-teal-500 hover:bg-slate-50 transition-all w-full md:w-96 mx-auto">
+                                    {qrCodePreview ? (
+                                        <div className="relative">
+                                            <img src={qrCodePreview} alt="QR Code Preview" className="max-h-48 rounded-lg" />
+                                            <div className="absolute inset-0 bg-black/50 opacity-0 hover:opacity-100 flex items-center justify-center rounded-lg transition-opacity text-white font-medium">
+                                                Click to Change
+                                            </div>
+                                        </div>
+                                    ) : (
+                                        <>
+                                            <div className="p-3 bg-teal-50 text-teal-600 rounded-full mb-3">
+                                                <UploadIcon size={24} />
+                                            </div>
+                                            <p className="text-slate-700 font-semibold mb-1">Click to Upload QR Code</p>
+                                            <p className="text-slate-400 text-xs">Supports JPG, PNG (Max 2MB)</p>
+                                        </>
+                                    )}
+                                </div>
+                            </Upload>
                         </Form.Item>
                     </Card>
 

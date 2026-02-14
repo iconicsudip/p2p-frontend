@@ -56,6 +56,7 @@ const App: React.FC = () => {
                                     <Route path="dashboard" element={<VendorDashboard />} />
                                     <Route path="create-request" element={<CreateRequest />} />
                                     <Route path="my-requests" element={<MyRequests />} />
+                                    <Route path="picked-requests" element={<MyRequests />} />
                                     <Route path="notifications" element={<Notifications />} />
                                     <Route path="settings" element={<VendorSettings />} />
                                 </Route>
@@ -78,6 +79,7 @@ const App: React.FC = () => {
                                     <Route path="create-vendor" element={<CreateVendor />} />
                                     <Route path="settings" element={<AdminSettings />} />
                                     <Route path="my-requests" element={<AdminMyRequests />} />
+                                    <Route path="picked-requests" element={<AdminMyRequests />} />
                                     <Route path="notifications" element={<Notifications />} />
                                 </Route>
 

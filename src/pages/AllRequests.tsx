@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { Table, Card, Select, Input, DatePicker, Space, Tag } from 'antd';
-import { Search, Calendar, ChevronRight } from 'lucide-react';
+import { Table, Card, Select, Input, DatePicker, Space, Tag, Button } from 'antd';
+import { Search, Calendar } from 'lucide-react';
 import { useAllRequestsForAdmin, usePickRequest } from '../hooks/useRequests';
 import { Request, RequestStatus, RequestType } from '../types';
 import type { ColumnsType } from 'antd/es/table';
@@ -124,12 +124,14 @@ export const AllRequests: React.FC = () => {
             render: (_, record: Request) => (
                 <Space>
                     {record.status === RequestStatus.PENDING && record.type === RequestType.WITHDRAWAL && (
-                        <button
+                        <Button
+                            type="primary"
                             onClick={() => handlePickRequest(record.id)}
-                            className="bg-indigo-50 text-indigo-600 hover:bg-indigo-100 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors border border-indigo-100 flex items-center gap-1.5"
+                            className="bg-indigo-600 hover:bg-indigo-700 h-8 px-4 rounded-lg font-medium shadow-sm shadow-indigo-200 border-none"
+                            loading={pickRequestMutation.isPending && pickRequestMutation.variables?.requestId === record.id}
                         >
-                            Pick <ChevronRight size={14} />
-                        </button>
+                            Pick Request
+                        </Button>
                     )}
                 </Space>
             ),
