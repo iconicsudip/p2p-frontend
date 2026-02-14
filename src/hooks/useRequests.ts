@@ -16,7 +16,7 @@ export const useAvailableRequests = (params: { page?: number; limit?: number; am
 
 
 // Fetch created requests
-export const useCreatedRequests = (page = 1, limit = 10, enabled = true, filters?: { startDate?: string; endDate?: string; status?: string }) => {
+export const useCreatedRequests = (page = 1, limit = 10, enabled = true, filters?: { startDate?: string; endDate?: string; status?: string; type?: string }) => {
     return useQuery({
         queryKey: ['requests', 'created', page, limit, filters],
         queryFn: async () => {
@@ -28,7 +28,7 @@ export const useCreatedRequests = (page = 1, limit = 10, enabled = true, filters
 };
 
 // Fetch picked requests
-export const usePickedRequests = (page = 1, limit = 10, enabled = true, filters?: { startDate?: string; endDate?: string; status?: string }) => {
+export const usePickedRequests = (page = 1, limit = 10, enabled = true, filters?: { startDate?: string; endDate?: string; status?: string; type?: string }) => {
     return useQuery({
         queryKey: ['requests', 'picked', page, limit, filters],
         queryFn: async () => {

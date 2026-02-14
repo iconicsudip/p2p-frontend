@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import { Table, Card, Select, Input, DatePicker, Space, Tag, Button } from 'antd';
 import { Search, Calendar } from 'lucide-react';
 import { useAllRequestsForAdmin, usePickRequest } from '../hooks/useRequests';
@@ -9,13 +10,27 @@ const { RangePicker } = DatePicker;
 const { Option } = Select;
 
 export const AllRequests: React.FC = () => {
+    const location = useLocation();
+    const queryParams = new URLSearchParams(location.search);
+
     const [page, setPage] = useState(1);
     const [limit, setLimit] = useState(10);
-    const [statusFilter, setStatusFilter] = useState<string | undefined>();
-    // Default to withdrawal requests as per requirement
-    const [typeFilter] = useState<string | undefined>(RequestType.WITHDRAWAL);
+    const [statusFilter, setStatusFilter] = useState<string | undefined>(queryParams.get('status') || undefined);
+    // Default to withdrawal requests as per requirement, but allow override from query
+    const [typeFilter, setTypeFilter] = useState<string | undefined>(queryParams.get('type') || RequestType.WITHDRAWAL);
     const [searchQuery, setSearchQuery] = useState('');
     const [dateRange, setDateRange] = useState<[string, string] | undefined>();
+    const [vendorIdFilter, setVendorIdFilter] = useState<string | undefined>(queryParams.get('vendorId') || undefined);
+
+    useEffect(() => {
+        const type = queryParams.get('type');
+        const status = queryParams.get('status');
+        const vendorId = queryParams.get('vendorId');
+
+        if (type) setTypeFilter(type);
+        if (status) setStatusFilter(status);
+        if (vendorId) setVendorIdFilter(vendorId);
+    }, [location.search]);
 
     const { data, isLoading } = useAllRequestsForAdmin({
         page,
@@ -25,6 +40,7 @@ export const AllRequests: React.FC = () => {
         search: searchQuery,
         startDate: dateRange?.[0],
         endDate: dateRange?.[1],
+        vendorId: vendorIdFilter
     });
 
     const requests = data?.requests?.data || [];

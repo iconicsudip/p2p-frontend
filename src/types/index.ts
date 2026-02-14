@@ -112,6 +112,11 @@ export interface VendorStats {
     totalWithdrawal: number;
     totalDeposit: number;
     netBalance: number;
+    rejectedDeposits?: { count: number; amount: number };
+    pendingWithdrawals?: { count: number; amount: number };
+    rejectedWithdrawals?: { count: number; amount: number };
+    approvedDeposits?: { count: number; amount: number };
+    approvedWithdrawals?: { count: number; amount: number };
 }
 
 export interface MonthlyStats {
@@ -138,6 +143,11 @@ export interface SystemOverview {
     totalDeposit: number;
     totalVendors: number;
     totalTransactions: number;
+    rejectedDeposits?: { count: number; amount: number };
+    pendingWithdrawals?: { count: number; amount: number };
+    rejectedWithdrawals?: { count: number; amount: number };
+    approvedDeposits?: { count: number; amount: number };
+    approvedWithdrawals?: { count: number; amount: number };
 }
 
 export interface LoginResponse {

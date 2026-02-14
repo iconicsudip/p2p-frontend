@@ -38,19 +38,30 @@ export const MyRequests: React.FC = () => {
     const [form] = Form.useForm();
 
     // Filter states
-    const [statusFilter, setStatusFilter] = useState<string | undefined>(undefined);
+    const queryParams = new URLSearchParams(location.search);
+    const [statusFilter, setStatusFilter] = useState<string | undefined>(queryParams.get('status') || undefined);
     const [dateRange, setDateRange] = useState<[string, string] | undefined>(undefined);
+    const [typeFilter, setTypeFilter] = useState<string | undefined>(queryParams.get('type') || undefined);
+
+    useEffect(() => {
+        const status = queryParams.get('status');
+        const type = queryParams.get('type');
+        if (status) setStatusFilter(status);
+        if (type) setTypeFilter(type);
+    }, [location.search]);
 
     // Only fetch the data needed for the current view
     const { data: createdData, refetch: refetchCreated, isLoading: createdLoading } = useCreatedRequests(createdPage, createdLimit, !isPickedView, {
         startDate: dateRange?.[0],
         endDate: dateRange?.[1],
-        status: statusFilter
+        status: statusFilter,
+        type: typeFilter
     });
     const { data: pickedRequestsData, refetch: refetchPicked, isLoading: pickedLoading } = usePickedRequests(pickedPage, pickedLimit, isPickedView, {
         startDate: dateRange?.[0],
         endDate: dateRange?.[1],
-        status: statusFilter
+        status: statusFilter,
+        type: typeFilter
     });
     const { data: detailedRequest, isLoading: isDetailsLoading } = useRequestDetails(selectedRequest?.id || '', !!selectedRequest?.id);
 

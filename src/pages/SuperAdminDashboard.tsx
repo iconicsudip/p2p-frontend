@@ -5,8 +5,14 @@ import {
     ArrowDown,
     ArrowUp,
     History,
-    KeyRound
+    KeyRound,
+    ArrowRightCircle,
+    XCircle,
+    Clock,
+    CheckCircle2,
+    Wallet
 } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { useSystemOverview, useAllVendorsStats, useExportSettlement } from '../hooks/useDashboard';
 import { useAuth } from '../contexts/AuthContext';
 import { DateRangeFilter } from '../components/DateRangeFilter';
@@ -19,19 +25,37 @@ import { Modal, Form, Input, Space, Tooltip } from 'antd';
 const { Title } = Typography;
 
 // Stat Card Component
-const StatCard = ({ title, value, icon, color, bgColor, isLoading }: any) => (
-    <Card bordered={false} className="shadow-sm rounded-2xl h-full hover:shadow-md transition-shadow">
+const StatCard = ({ title, value, count, icon, color, bgColor, isLoading, link }: any) => (
+    <Card bordered={false} className="shadow-sm rounded-2xl h-full hover:shadow-md transition-shadow group relative overflow-hidden">
         <div className="flex justify-between items-start mb-4">
             <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${bgColor}`}>
                 <span style={{ color: color }}>{icon}</span>
             </div>
+            {link && (
+                <Link to={link} className="text-slate-400 hover:text-indigo-600 transition-colors">
+                    <ArrowRightCircle size={20} />
+                </Link>
+            )}
         </div>
         <div>
             <p className="text-slate-500 text-sm font-medium mb-1">{title}</p>
-            <h3 className="text-3xl font-bold text-slate-900">
+            <h3 className="text-3xl font-bold text-slate-900 mb-1">
                 {isLoading ? '...' : `₹${value.toLocaleString()}`}
             </h3>
+            {count !== undefined && (
+                <p className="text-slate-400 text-xs font-semibold">
+                    Total {title.split(' - ').pop()} : {isLoading ? '...' : count}
+                </p>
+            )}
         </div>
+        {link && (
+            <Link
+                to={link}
+                className="absolute bottom-0 left-0 right-0 py-2 bg-slate-50 text-center text-xs font-bold text-slate-500 hover:bg-slate-100 hover:text-indigo-600 transition-all border-t border-slate-100 flex items-center justify-center gap-1 opacity-0 group-hover:opacity-100 transform translate-y-2 group-hover:translate-y-0"
+            >
+                More info <ArrowRightCircle size={14} />
+            </Link>
+        )}
     </Card>
 );
 
@@ -256,10 +280,64 @@ export const SuperAdminDashboard: React.FC = () => {
                 <StatCard
                     title={selectedVendorName ? `${selectedVendorName} - Net Balance` : "All - Net Balance"}
                     value={(overview?.totalDeposit || 0) - (overview?.totalWithdrawal || 0)}
-                    icon={<ArrowUp size={24} />}
+                    icon={<Wallet size={24} />}
                     color="#6366f1"
                     bgColor="bg-indigo-50"
                     isLoading={overviewLoading}
+                />
+            </div>
+
+            {/* Enhanced Status Stats */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-6">
+                <StatCard
+                    title="Rejected Deposits"
+                    value={overview?.rejectedDeposits?.amount || 0}
+                    count={overview?.rejectedDeposits?.count}
+                    icon={<XCircle size={24} />}
+                    color="#f43f5e"
+                    bgColor="bg-rose-50"
+                    isLoading={overviewLoading}
+                    link={`/admin/requests?type=DEPOSIT&status=REJECTED${selectedVendor ? `&vendorId=${selectedVendor}` : ''}`}
+                />
+                <StatCard
+                    title="Pending Withdrawals"
+                    value={overview?.pendingWithdrawals?.amount || 0}
+                    count={overview?.pendingWithdrawals?.count}
+                    icon={<Clock size={24} />}
+                    color="#f59e0b"
+                    bgColor="bg-amber-50"
+                    isLoading={overviewLoading}
+                    link={`/admin/requests?type=WITHDRAWAL&status=PENDING${selectedVendor ? `&vendorId=${selectedVendor}` : ''}`}
+                />
+                <StatCard
+                    title="Rejected Withdrawals"
+                    value={overview?.rejectedWithdrawals?.amount || 0}
+                    count={overview?.rejectedWithdrawals?.count}
+                    icon={<XCircle size={24} />}
+                    color="#f43f5e"
+                    bgColor="bg-rose-50"
+                    isLoading={overviewLoading}
+                    link={`/admin/requests?type=WITHDRAWAL&status=REJECTED${selectedVendor ? `&vendorId=${selectedVendor}` : ''}`}
+                />
+                <StatCard
+                    title="Approved Deposits"
+                    value={overview?.approvedDeposits?.amount || 0}
+                    count={overview?.approvedDeposits?.count}
+                    icon={<CheckCircle2 size={24} />}
+                    color="#10b981"
+                    bgColor="bg-emerald-50"
+                    isLoading={overviewLoading}
+                    link={`/admin/requests?type=DEPOSIT&status=COMPLETED${selectedVendor ? `&vendorId=${selectedVendor}` : ''}`}
+                />
+                <StatCard
+                    title="Approved Withdrawals"
+                    value={overview?.approvedWithdrawals?.amount || 0}
+                    count={overview?.approvedWithdrawals?.count}
+                    icon={<CheckCircle2 size={24} />}
+                    color="#10b981"
+                    bgColor="bg-emerald-50"
+                    isLoading={overviewLoading}
+                    link={`/admin/requests?type=WITHDRAWAL&status=COMPLETED${selectedVendor ? `&vendorId=${selectedVendor}` : ''}`}
                 />
             </div>
 
