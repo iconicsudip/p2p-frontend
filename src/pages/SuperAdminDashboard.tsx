@@ -258,86 +258,92 @@ export const SuperAdminDashboard: React.FC = () => {
                 </div>
             </Card>
 
-            {/* Deposit & Withdrawal Stats Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6 mt-6">
-                <StatCard
-                    title={selectedVendorName ? `${selectedVendorName} - Total Withdrawal` : "All - Total Withdrawal"}
-                    value={overview?.totalWithdrawal || 0}
-                    icon={<ArrowDown size={24} />}
-                    color="#f43f5e"
-                    bgColor="bg-rose-50"
-                    isLoading={overviewLoading}
-                />
-                <StatCard
-                    title={selectedVendorName ? `${selectedVendorName} - Total Deposit` : "All - Total Deposit"}
-                    value={overview?.totalDeposit || 0}
-                    icon={<ArrowUp size={24} />}
-                    color="#10b981"
-                    bgColor="bg-emerald-50"
-                    isLoading={overviewLoading}
-                />
-                <StatCard
-                    title={selectedVendorName ? `${selectedVendorName} - Net Balance` : "All - Net Balance"}
-                    value={(overview?.totalDeposit || 0) - (overview?.totalWithdrawal || 0)}
-                    icon={<Wallet size={24} />}
-                    color="#6366f1"
-                    bgColor="bg-indigo-50"
-                    isLoading={overviewLoading}
-                />
+            {/* Admin Financials Section */}
+            <div className="mb-8">
+                <h3 className="text-lg font-bold text-slate-800 mb-4 px-1">Admin Financials</h3>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <StatCard
+                        title={selectedVendorName ? `${selectedVendorName} - Total Debit` : "System Total Debit"}
+                        value={overview?.totalWithdrawal || 0}
+                        icon={<ArrowDown size={24} />}
+                        color="#f43f5e"
+                        bgColor="bg-rose-50"
+                        isLoading={overviewLoading}
+                    />
+                    <StatCard
+                        title={selectedVendorName ? `${selectedVendorName} - Total Credit` : "System Total Credit"}
+                        value={overview?.totalDeposit || 0}
+                        icon={<ArrowUp size={24} />}
+                        color="#10b981"
+                        bgColor="bg-emerald-50"
+                        isLoading={overviewLoading}
+                    />
+                    <StatCard
+                        title={selectedVendorName ? `${selectedVendorName} - Net Balance` : "System Net Balance"}
+                        value={(overview?.totalDeposit || 0) - (overview?.totalWithdrawal || 0)}
+                        icon={<Wallet size={24} />}
+                        color="#6366f1"
+                        bgColor="bg-indigo-50"
+                        isLoading={overviewLoading}
+                    />
+                </div>
             </div>
 
-            {/* Enhanced Status Stats */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-6">
-                <StatCard
-                    title="Rejected Deposits"
-                    value={overview?.rejectedDeposits?.amount || 0}
-                    count={overview?.rejectedDeposits?.count}
-                    icon={<XCircle size={24} />}
-                    color="#f43f5e"
-                    bgColor="bg-rose-50"
-                    isLoading={overviewLoading}
-                    link={`/admin/requests?type=DEPOSIT&status=REJECTED${selectedVendor ? `&vendorId=${selectedVendor}` : ''}`}
-                />
-                <StatCard
-                    title="Pending Withdrawals"
-                    value={overview?.pendingWithdrawals?.amount || 0}
-                    count={overview?.pendingWithdrawals?.count}
-                    icon={<Clock size={24} />}
-                    color="#f59e0b"
-                    bgColor="bg-amber-50"
-                    isLoading={overviewLoading}
-                    link={`/admin/requests?type=WITHDRAWAL&status=PENDING${selectedVendor ? `&vendorId=${selectedVendor}` : ''}`}
-                />
-                <StatCard
-                    title="Rejected Withdrawals"
-                    value={overview?.rejectedWithdrawals?.amount || 0}
-                    count={overview?.rejectedWithdrawals?.count}
-                    icon={<XCircle size={24} />}
-                    color="#f43f5e"
-                    bgColor="bg-rose-50"
-                    isLoading={overviewLoading}
-                    link={`/admin/requests?type=WITHDRAWAL&status=REJECTED${selectedVendor ? `&vendorId=${selectedVendor}` : ''}`}
-                />
-                <StatCard
-                    title="Approved Deposits"
-                    value={overview?.approvedDeposits?.amount || 0}
-                    count={overview?.approvedDeposits?.count}
-                    icon={<CheckCircle2 size={24} />}
-                    color="#10b981"
-                    bgColor="bg-emerald-50"
-                    isLoading={overviewLoading}
-                    link={`/admin/requests?type=DEPOSIT&status=COMPLETED${selectedVendor ? `&vendorId=${selectedVendor}` : ''}`}
-                />
-                <StatCard
-                    title="Approved Withdrawals"
-                    value={overview?.approvedWithdrawals?.amount || 0}
-                    count={overview?.approvedWithdrawals?.count}
-                    icon={<CheckCircle2 size={24} />}
-                    color="#10b981"
-                    bgColor="bg-emerald-50"
-                    isLoading={overviewLoading}
-                    link={`/admin/requests?type=WITHDRAWAL&status=COMPLETED${selectedVendor ? `&vendorId=${selectedVendor}` : ''}`}
-                />
+            {/* Operational Status Section */}
+            <div className="mb-8">
+                <h3 className="text-lg font-bold text-slate-800 mb-4 px-1">Operational Status</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
+                    <StatCard
+                        title="Rejected Deposits"
+                        value={overview?.rejectedDeposits?.amount || 0}
+                        count={overview?.rejectedDeposits?.count}
+                        icon={<XCircle size={24} />}
+                        color="#f43f5e"
+                        bgColor="bg-rose-50"
+                        isLoading={overviewLoading}
+                        link={`/admin/requests?type=DEPOSIT&status=REJECTED${selectedVendor ? `&vendorId=${selectedVendor}` : ''}`}
+                    />
+                    <StatCard
+                        title="Pending Withdrawals"
+                        value={overview?.pendingWithdrawals?.amount || 0}
+                        count={overview?.pendingWithdrawals?.count}
+                        icon={<Clock size={24} />}
+                        color="#f59e0b"
+                        bgColor="bg-amber-50"
+                        isLoading={overviewLoading}
+                        link={`/admin/requests?type=WITHDRAWAL&status=PENDING${selectedVendor ? `&vendorId=${selectedVendor}` : ''}`}
+                    />
+                    <StatCard
+                        title="Rejected Withdrawals"
+                        value={overview?.rejectedWithdrawals?.amount || 0}
+                        count={overview?.rejectedWithdrawals?.count}
+                        icon={<XCircle size={24} />}
+                        color="#f43f5e"
+                        bgColor="bg-rose-50"
+                        isLoading={overviewLoading}
+                        link={`/admin/requests?type=WITHDRAWAL&status=REJECTED${selectedVendor ? `&vendorId=${selectedVendor}` : ''}`}
+                    />
+                    <StatCard
+                        title="Approved Deposits"
+                        value={overview?.approvedDeposits?.amount || 0}
+                        count={overview?.approvedDeposits?.count}
+                        icon={<CheckCircle2 size={24} />}
+                        color="#10b981"
+                        bgColor="bg-emerald-50"
+                        isLoading={overviewLoading}
+                        link={`/admin/requests?type=DEPOSIT&status=COMPLETED${selectedVendor ? `&vendorId=${selectedVendor}` : ''}`}
+                    />
+                    <StatCard
+                        title="Approved Withdrawals"
+                        value={overview?.approvedWithdrawals?.amount || 0}
+                        count={overview?.approvedWithdrawals?.count}
+                        icon={<CheckCircle2 size={24} />}
+                        color="#10b981"
+                        bgColor="bg-emerald-50"
+                        isLoading={overviewLoading}
+                        link={`/admin/requests?type=WITHDRAWAL&status=COMPLETED${selectedVendor ? `&vendorId=${selectedVendor}` : ''}`}
+                    />
+                </div>
             </div>
 
             {/* Vendor Statistics Table */}
