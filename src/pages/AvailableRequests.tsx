@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
-import { Table, /* Button, */ Input, Avatar } from 'antd';
-import { ArrowLeftRight, Search/* , LogIn */ } from 'lucide-react';
+import { Avatar, /* Button, */ Input, Table } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
+import dayjs from 'dayjs';
+import { ArrowLeftRight, Search /* , LogIn */ } from 'lucide-react';
+import React, { useState } from 'react';
+import { useAvailableRequests /* , usePickRequest */ } from '../hooks/useRequests';
 import { Request, RequestType } from '../types';
-import { useAvailableRequests/* , usePickRequest */ } from '../hooks/useRequests';
 
 export const AvailableRequests: React.FC = () => {
     const [page, setPage] = useState(1);
@@ -44,11 +45,7 @@ export const AvailableRequests: React.FC = () => {
             key: 'createdAt',
             render: (date: string) => (
                 <span className="text-sm font-medium text-gray-700">
-                    {new Date(date).toLocaleDateString('en-US', {
-                        month: 'short',
-                        day: 'numeric',
-                        year: 'numeric'
-                    })}
+                    {dayjs(date).format('DD MMM YYYY, hh:mm A')}
                 </span>
             ),
             width: 150,

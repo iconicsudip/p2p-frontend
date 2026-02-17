@@ -1,11 +1,12 @@
+import { Button, Card, Form, Image, Input, message, Modal, Upload } from 'antd';
+import dayjs from 'dayjs';
+import { ArrowDown, Building2, Image as ImageIcon, QrCode, Search, Upload as UploadIcon, User } from 'lucide-react';
 import React, { useState } from 'react';
-import { Form, Input, Button, Card, message, Modal, Upload, Image } from 'antd';
 import { useNavigate } from 'react-router-dom';
-import { Building2, QrCode, Search, User, ArrowDown, Image as ImageIcon, Upload as UploadIcon } from 'lucide-react';
-import { useCreateRequest, useAvailableRequests, usePickRequest, useAdminBankDetails } from '../hooks/useRequests';
 import { useCurrentUser } from '../hooks/useAuth';
+import { useAdminBankDetails, useAvailableRequests, useCreateRequest, usePickRequest } from '../hooks/useRequests';
 import { requestAPI } from '../services/apiService';
-import { RequestType, CreateRequestRequest, UserRole, WithdrawalLimitConfig } from '../types';
+import { CreateRequestRequest, RequestType, UserRole, WithdrawalLimitConfig } from '../types';
 import { compressImage } from '../utils/imageUtils';
 
 enum PaymentMethod {
@@ -488,7 +489,7 @@ export const CreateRequest: React.FC = () => {
                                         name={['bankDetails', 'ifscCode']}
                                         rules={[
                                             { required: true, message: 'Please enter IFSC code' },
-                                            { pattern: /^[A-Z]{4}0[A-Z0-9]{6}$/, message: 'Enter a valid IFSC code (e.g., SBIN0123456)' }
+                                            { pattern: /^[A-Z0-9]{11}$/, message: 'Enter a valid IFSC code (11 characters)' }
                                         ]}
                                     >
                                         <Input
@@ -651,10 +652,8 @@ export const CreateRequest: React.FC = () => {
                                                     <span className="text-xs bg-rose-100 text-rose-700 font-bold px-2 py-0.5 rounded-full uppercase">WITHDRAWAL</span>
                                                 </div>
                                                 <div className="flex items-center gap-2 mt-1">
-                                                    <User size={14} className="text-slate-400" />
-                                                    <span className="text-sm text-slate-600 font-medium">{req.createdBy?.name}</span>
-                                                    <span className="text-xs text-slate-400 border-l border-slate-200 pl-2 ml-1">
-                                                        {new Date(req.createdAt).toLocaleDateString()}
+                                                    <span className="text-xs text-slate-500 font-medium">
+                                                        {dayjs(req.createdAt).format('DD MMM YYYY, hh:mm A')}
                                                     </span>
                                                 </div>
                                             </div>

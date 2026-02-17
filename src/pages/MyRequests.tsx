@@ -1,21 +1,22 @@
-import React, { useState, useEffect } from 'react';
-import { Table, Button, Modal, Form, Upload, message, Space, Dropdown, Image, Spin, Input, Select, DatePicker } from 'antd';
-import { useLocation, useNavigate } from 'react-router-dom';
-import { Upload as UploadIcon, Check, X, Copy, Eye, MoreVertical, CheckCircle, XCircle, AlertTriangle, RotateCcw, AlertCircle, Trash2, QrCode } from 'lucide-react';
+import { Button, DatePicker, Dropdown, Form, Image, Input, message, Modal, Select, Space, Spin, Table, Upload } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
-import { Request, RequestStatus, RequestType } from '../types';
-import { compressImage } from '../utils/imageUtils';
+import dayjs from 'dayjs';
+import { AlertCircle, AlertTriangle, Check, CheckCircle, Copy, Eye, MoreVertical, QrCode, RotateCcw, Trash2, Upload as UploadIcon, X, XCircle } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import {
     useCreatedRequests,
+    useDeleteRequest,
     usePickedRequests,
+    useReportPaymentFailure,
+    useRequestDetails,
+    useRevertRequest,
     useUploadPaymentSlip,
     useVerifyPayment,
-    useReportPaymentFailure,
-    useRevertRequest,
-    useRequestDetails,
-    useDeleteRequest,
 } from '../hooks/useRequests';
 import { requestAPI } from '../services/apiService';
+import { Request, RequestStatus, RequestType } from '../types';
+import { compressImage } from '../utils/imageUtils';
 
 
 export const MyRequests: React.FC = () => {
@@ -331,7 +332,7 @@ export const MyRequests: React.FC = () => {
             key: 'createdAt',
             render: (date: string) => (
                 <span className="text-sm font-medium text-gray-900">
-                    {new Date(date).toLocaleDateString('en-GB')}
+                    {dayjs(date).format('DD MMM YYYY, hh:mm A')}
                 </span>
             ),
             width: 150,
@@ -509,7 +510,7 @@ export const MyRequests: React.FC = () => {
             key: 'createdAt',
             render: (date: string) => (
                 <span className="text-sm font-medium text-gray-900">
-                    {new Date(date).toLocaleDateString('en-GB')}
+                    {dayjs(date).format('DD MMM YYYY, hh:mm A')}
                 </span>
             ),
             width: 150,

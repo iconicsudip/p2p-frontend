@@ -1,10 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import { Button, Card, DatePicker, Input, Select, Space, Table, Tag } from 'antd';
+import type { ColumnsType } from 'antd/es/table';
+import dayjs from 'dayjs';
+import { Calendar, Search } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
 import { useLocation } from 'react-router-dom';
-import { Table, Card, Select, Input, DatePicker, Space, Tag, Button } from 'antd';
-import { Search, Calendar } from 'lucide-react';
 import { useAllRequestsForAdmin, usePickRequest } from '../hooks/useRequests';
 import { Request, RequestStatus, RequestType } from '../types';
-import type { ColumnsType } from 'antd/es/table';
 
 const { RangePicker } = DatePicker;
 const { Option } = Select;
@@ -76,7 +77,7 @@ export const AllRequests: React.FC = () => {
             key: 'createdAt',
             render: (date: string) => (
                 <span className="text-sm font-medium text-gray-900">
-                    {new Date(date).toLocaleDateString('en-GB')}
+                    {dayjs(date).format('DD MMM YYYY, hh:mm A')}
                 </span>
             ),
             width: 120,

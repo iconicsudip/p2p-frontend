@@ -1,11 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import { Image as AntImage, Avatar, Button, Card, Drawer, Input, Select, Skeleton, Spin, Table, Tag, Timeline } from 'antd';
+import dayjs from 'dayjs';
+import { Calendar, DollarSign, Eye, FileText, Image, Search, User } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { Table, Card, Tag, Button, Input, Select, Drawer, Timeline, Spin, Avatar, Image as AntImage, Skeleton } from 'antd';
-import { Calendar, Search, FileText, Eye, DollarSign, User, Image } from 'lucide-react';
-import { useAllRequestsForAdmin, useRequestLogs, useRequestDetails, useRequestSlips } from '../hooks/useRequests';
-import { useAllVendorsList } from '../hooks/useDashboard';
 import { DateRangeFilter } from '../components/DateRangeFilter';
-import { RequestStatus, RequestType, Request } from '../types';
+import { useAllVendorsList } from '../hooks/useDashboard';
+import { useAllRequestsForAdmin, useRequestDetails, useRequestLogs, useRequestSlips } from '../hooks/useRequests';
+import { Request, RequestStatus, RequestType } from '../types';
 
 const { Option } = Select;
 
@@ -74,7 +75,7 @@ export const AdminActivityLog: React.FC = () => {
             title: 'Date',
             dataIndex: 'createdAt',
             key: 'createdAt',
-            render: (date: string) => <span className="text-sm text-slate-700">{new Date(date).toLocaleDateString()}</span>,
+            render: (date: string) => <span className="text-sm text-slate-700">{dayjs(date).format('DD MMM YYYY, hh:mm A')}</span>,
             width: 120,
         },
         {
@@ -336,7 +337,7 @@ export const AdminActivityLog: React.FC = () => {
                                             <div className="p-3 bg-white">
                                                 <div className="flex justify-between items-center mb-1">
                                                     <span className="font-bold text-slate-700">₹{Number(slip.amount).toLocaleString()}</span>
-                                                    <span className="text-xs text-slate-400">{new Date(slip.createdAt).toLocaleDateString()}</span>
+                                                    <span className="text-xs text-slate-400">{dayjs(slip.createdAt).format('DD MMM YYYY, hh:mm A')}</span>
                                                 </div>
                                             </div>
                                         </div>
@@ -370,7 +371,7 @@ export const AdminActivityLog: React.FC = () => {
                                                             {log.action?.replace(/_/g, ' ') || 'ACTION'}
                                                         </span>
                                                         <span className="text-xs text-slate-400 whitespace-nowrap ml-2">
-                                                            {log.createdAt ? new Date(log.createdAt).toLocaleString() : ''}
+                                                            {log.createdAt ? dayjs(log.createdAt).format('DD MMM YYYY, hh:mm A') : ''}
                                                         </span>
                                                     </div>
                                                     <div className="text-sm text-slate-600 mt-1">

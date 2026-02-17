@@ -1,14 +1,18 @@
-import React, { useMemo, useState } from 'react';
-import { Button, Tabs, Pagination } from 'antd';
+import { Button, Pagination, Tabs } from 'antd';
+import dayjs from 'dayjs';
+import relativeTime from 'dayjs/plugin/relativeTime';
 import {
-    Check,
-    Bell,
-    CheckCircle,
     AlertCircle,
+    Bell,
+    Check,
+    CheckCircle,
     Info,
 } from 'lucide-react';
-import { useNotifications, useUnreadNotifications, useMarkNotificationRead, useMarkAllNotificationsRead } from '../hooks/useNotifications';
+import React, { useMemo, useState } from 'react';
+import { useMarkAllNotificationsRead, useMarkNotificationRead, useNotifications, useUnreadNotifications } from '../hooks/useNotifications';
 import { Notification, NotificationType } from '../types';
+
+dayjs.extend(relativeTime);
 
 export const Notifications: React.FC = () => {
     const [page, setPage] = useState(1);
@@ -70,21 +74,7 @@ export const Notifications: React.FC = () => {
     };
 
     const getTimeAgo = (dateStr: string) => {
-        const date = new Date(dateStr);
-        const now = new Date();
-        const seconds = Math.floor((now.getTime() - date.getTime()) / 1000);
-
-        let interval = seconds / 31536000;
-        if (interval > 1) return Math.floor(interval) + " years ago";
-        interval = seconds / 2592000;
-        if (interval > 1) return Math.floor(interval) + " months ago";
-        interval = seconds / 86400;
-        if (interval > 1) return Math.floor(interval) + " days ago";
-        interval = seconds / 3600;
-        if (interval > 1) return Math.floor(interval) + " hours ago";
-        interval = seconds / 60;
-        if (interval > 1) return Math.floor(interval) + " mins ago";
-        return "Just now";
+        return dayjs(dateStr).fromNow();
     };
 
     const getNotificationStyle = (type: NotificationType) => {

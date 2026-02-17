@@ -1,26 +1,27 @@
-import React, { useMemo, useState } from 'react';
-import { Card, Table, Button, message } from 'antd';
+import { Button, Card, message, Table } from 'antd';
+import dayjs from 'dayjs';
 import {
-    ArrowUp,
     ArrowDown,
-    Wallet,
+    ArrowRightCircle,
+    ArrowUp,
+    CheckCircle2,
     Clock,
     Download,
-    ArrowRightCircle,
-    CheckCircle2,
+    Wallet,
     XCircle
 } from 'lucide-react';
+import React, { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { useVendorStats, useExportSettlement } from '../hooks/useDashboard';
-import { useCreatedRequests, usePickedRequests } from '../hooks/useRequests';
 import { DateRangeFilter } from '../components/DateRangeFilter';
-import { RequestStatus, RequestType } from '../types';
 import { useAuth } from '../contexts/AuthContext';
+import { useExportSettlement, useVendorStats } from '../hooks/useDashboard';
+import { useCreatedRequests, usePickedRequests } from '../hooks/useRequests';
+import { RequestStatus, RequestType } from '../types';
 
 const StatCard = ({ title, value, count, icon, color, bgColor, isLoading, link }: any) => (
-    <Card bordered={false} className="shadow-sm rounded-[24px] p-2 hover:shadow-md transition-shadow group relative overflow-hidden h-full">
+    <Card bordered={false} className={`shadow-sm rounded-[24px] p-2 hover:shadow-md transition-shadow group relative overflow-hidden h-full ${bgColor}`} style={{ backgroundColor: `${color}15` }}>
         <div className="flex justify-between items-start mb-4">
-            <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${bgColor}`} style={{ color: color }}>
+            <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-white" style={{ color: color }}>
                 {icon}
             </div>
             {link && (
@@ -103,7 +104,7 @@ export const VendorDashboard: React.FC = () => {
             title: 'DATE',
             dataIndex: 'createdAt',
             key: 'createdAt',
-            render: (date: string) => <span className="font-semibold text-slate-700">{new Date(date).toLocaleDateString()}</span>
+            render: (date: string) => <span className="font-semibold text-slate-700">{dayjs(date).format('DD MMM YYYY, hh:mm A')}</span>
         },
         {
             title: 'TYPE',

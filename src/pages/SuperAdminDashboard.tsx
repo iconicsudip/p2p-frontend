@@ -1,34 +1,33 @@
-import React, { useState } from 'react';
-import { Card, Typography, Table, Button, message, Select } from 'antd';
+import { useQuery } from '@tanstack/react-query';
+import { Button, Card, Form, Input, message, Modal, Select, Space, Table, Tooltip, Typography } from 'antd';
 import {
-    Download,
     ArrowDown,
+    ArrowRightCircle,
     ArrowUp,
+    CheckCircle2,
+    Clock,
+    Download,
     History,
     KeyRound,
-    ArrowRightCircle,
-    XCircle,
-    Clock,
-    CheckCircle2,
-    Wallet
+    Wallet,
+    XCircle
 } from 'lucide-react';
+import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { useSystemOverview, useAllVendorsStats, useExportSettlement } from '../hooks/useDashboard';
-import { useAuth } from '../contexts/AuthContext';
-import { DateRangeFilter } from '../components/DateRangeFilter';
-import { authAPI } from '../services/apiService';
-import { useQuery } from '@tanstack/react-query';
 import { BankDetailsAlert } from '../components/BankDetailsAlert';
+import { DateRangeFilter } from '../components/DateRangeFilter';
 import { VendorActivityDrawer } from '../components/VendorActivityDrawer';
-import { Modal, Form, Input, Space, Tooltip } from 'antd';
+import { useAuth } from '../contexts/AuthContext';
+import { useAllVendorsStats, useExportSettlement, useSystemOverview } from '../hooks/useDashboard';
+import { authAPI } from '../services/apiService';
 
 const { Title } = Typography;
 
 // Stat Card Component
 const StatCard = ({ title, value, count, icon, color, bgColor, isLoading, link }: any) => (
-    <Card bordered={false} className="shadow-sm rounded-2xl h-full hover:shadow-md transition-shadow group relative overflow-hidden">
+    <Card bordered={false} className={`shadow-sm rounded-2xl h-full hover:shadow-md transition-shadow group relative overflow-hidden ${bgColor}`} style={{ backgroundColor: `${color}15` }}>
         <div className="flex justify-between items-start mb-4">
-            <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${bgColor}`}>
+            <div className="w-12 h-12 rounded-xl flex items-center justify-center bg-white">
                 <span style={{ color: color }}>{icon}</span>
             </div>
             {link && (
