@@ -1,20 +1,22 @@
-import React, { useState } from 'react';
-import { Layout, Drawer, Button } from 'antd';
+import { Button, Drawer, Layout } from 'antd';
 import {
-    LayoutDashboard,
-    Users,
-    UserPlus,
-    Bell,
-    LogOut,
-    Wallet,
-    FileText,
     Activity,
-    Menu,
-    X,
-    Settings,
+    Bell,
+    Building2,
     CheckCircle,
+    FileText,
+    LayoutDashboard,
+    LogOut,
+    Menu,
+    Plus,
+    Settings,
+    UserPlus,
+    Users,
+    Wallet,
+    X,
 } from 'lucide-react';
-import { useNavigate, useLocation, Outlet } from 'react-router-dom';
+import React, { useState } from 'react';
+import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useUnreadCount } from '../hooks/useNotifications';
 import { ResetPasswordModal } from './ResetPasswordModal';
@@ -28,6 +30,7 @@ export const DashboardLayout: React.FC = () => {
     const { data: countData } = useUnreadCount();
     const unreadCount = countData?.count || 0;
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+    const [expandedMenus, setExpandedMenus] = useState<string[]>([]);
 
     const handleLogout = () => {
         logout();
@@ -121,6 +124,26 @@ export const DashboardLayout: React.FC = () => {
             activeColor: 'text-emerald-600'
         },
         {
+            key: '/admin/accounts',
+            icon: <Building2 size={18} />, // Need to import Building2
+            label: 'Accounts',
+            color: 'text-indigo-500',
+            bgColor: 'bg-indigo-50',
+            activeColor: 'text-indigo-600',
+            children: [
+                {
+                    key: '/admin/accounts/list',
+                    label: 'List',
+                    icon: <FileText size={16} />
+                },
+                {
+                    key: '/admin/accounts/add',
+                    label: 'Add',
+                    icon: <Plus size={16} /> // Need to import Plus
+                }
+            ]
+        },
+        {
             key: '/admin/settings',
             icon: <Settings size={18} />,
             label: 'Settings',
@@ -182,29 +205,67 @@ export const DashboardLayout: React.FC = () => {
 
                 {/* Menu */}
                 <nav className="flex flex-col px-4 mt-2">
-                    {menuItems.map(item => {
-                        const isActive = location.pathname === item.key;
+                    {menuItems.map((item: any) => {
+                        const isActive = location.pathname === item.key || item.children?.some((child: any) => location.pathname === child.key);
+                        const isExpanded = expandedMenus.includes(item.key) || item.children?.some((child: any) => location.pathname === child.key);
+
                         return (
-                            <div
-                                key={item.key}
-                                onClick={() => {
-                                    navigate(item.key);
-                                    setMobileMenuOpen(false);
-                                }}
-                                className={`flex items-center gap-3 px-[16px] py-[8px] rounded-[8px] transition-all cursor-pointer group mb-1 ${isActive
-                                    ? `${item.bgColor} ${item.activeColor} font-bold border border-gray-200`
-                                    : 'text-slate-500 hover:bg-slate-50 hover:text-slate-900'
-                                    }`}
-                            >
-                                <span className={`text-[18px] flex items-center transition-colors ${isActive ? item.activeColor : item.color
-                                    }`}>
-                                    {item.icon}
-                                </span>
-                                <span className={`text-[14px] flex-1 font-medium`}>{item.label as string}</span>
-                                {item.label === 'Notifications' && unreadCount > 0 && (
-                                    <span className="bg-rose-500 text-white text-xs font-bold px-2 py-0.5 rounded-full min-w-[20px] text-center shadow-sm shadow-rose-200">
-                                        {unreadCount}
+                            <div key={item.key}>
+                                <div
+                                    onClick={() => {
+                                        if (item.children) {
+                                            setExpandedMenus(prev =>
+                                                prev.includes(item.key)
+                                                    ? prev.filter(k => k !== item.key)
+                                                    : [...prev, item.key]
+                                            );
+                                        } else {
+                                            navigate(item.key);
+                                            setMobileMenuOpen(false);
+                                        }
+                                    }}
+                                    className={`flex items-center gap-3 px-[16px] py-[8px] rounded-[8px] transition-all cursor-pointer group mb-1 ${isActive
+                                        ? `${item.bgColor} ${item.activeColor} font-bold border border-gray-200`
+                                        : 'text-slate-500 hover:bg-slate-50 hover:text-slate-900'
+                                        }`}
+                                >
+                                    <span className={`text-[18px] flex items-center transition-colors ${isActive ? item.activeColor : item.color
+                                        }`}>
+                                        {item.icon}
                                     </span>
+                                    <span className={`text-[14px] flex-1 font-medium`}>{item.label}</span>
+                                    {item.label === 'Notifications' && unreadCount > 0 && (
+                                        <span className="bg-rose-500 text-white text-xs font-bold px-2 py-0.5 rounded-full min-w-[20px] text-center shadow-sm shadow-rose-200">
+                                            {unreadCount}
+                                        </span>
+                                    )}
+                                </div>
+                                {item.children && (
+                                    <div className={`ml-8 space-y-1 overflow-hidden transition-all duration-300 ease-in-out ${isExpanded
+                                            ? 'max-h-40 opacity-100 mt-1'
+                                            : 'max-h-0 opacity-0'
+                                        }`}>
+                                        {item.children.map((child: any) => {
+                                            const isChildActive = location.pathname === child.key;
+                                            return (
+                                                <div
+                                                    key={child.key}
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        navigate(child.key);
+                                                        setMobileMenuOpen(false);
+                                                    }}
+                                                    className={`flex items-center gap-3 px-[16px] py-[8px] rounded-[8px] transition-all cursor-pointer ${isChildActive
+                                                        ? 'bg-indigo-50 text-indigo-600 font-bold'
+                                                        : 'text-slate-500 hover:bg-slate-50 hover:text-slate-900'
+                                                        }`}
+                                                >
+                                                    <span className="text-[16px]">{child.icon}</span>
+                                                    <span className="text-[13px] font-medium">{child.label}</span>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
                                 )}
                             </div>
                         );

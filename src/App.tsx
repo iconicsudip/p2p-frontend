@@ -1,28 +1,30 @@
-import React from 'react';
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
-import { ConfigProvider } from 'antd';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
-import { queryClient } from './lib/queryClient';
-import { AuthProvider } from './contexts/AuthContext';
-import { ProtectedRoute } from './components/ProtectedRoute';
-import { SubdomainRouteGuard } from './components/SubdomainRouteGuard';
-import { RootRedirect } from './components/RootRedirect';
+import { ConfigProvider } from 'antd';
+import React from 'react';
+import { BrowserRouter, Route, Routes } from 'react-router-dom';
 import { DashboardLayout } from './components/DashboardLayout';
 import { GlobalNotification } from './components/GlobalNotification';
-import { Login } from './pages/Login';
-import { VendorDashboard } from './pages/VendorDashboard';
-import { SuperAdminDashboard } from './pages/SuperAdminDashboard';
-import { CreateRequest } from './pages/CreateRequest';
-import { MyRequests } from './pages/MyRequests';
-import { AdminMyRequests } from './pages/AdminMyRequests';
-import { AllRequests } from './pages/AllRequests';
-import { CreateVendor } from './pages/CreateVendor';
-import { VendorsList } from './pages/VendorsList';
-import { Notifications } from './pages/Notifications';
+import { ProtectedRoute } from './components/ProtectedRoute';
+import { RootRedirect } from './components/RootRedirect';
+import { SubdomainRouteGuard } from './components/SubdomainRouteGuard';
+import { AuthProvider } from './contexts/AuthContext';
+import { queryClient } from './lib/queryClient';
+import { AccountList } from './pages/AdminAccounts/AccountList';
+import { AddAccount } from './pages/AdminAccounts/AddAccount';
 import { AdminActivityLog } from './pages/AdminActivityLog';
+import { AdminMyRequests } from './pages/AdminMyRequests';
 import { AdminSettings } from './pages/AdminSettings';
+import { AllRequests } from './pages/AllRequests';
+import { CreateRequest } from './pages/CreateRequest';
+import { CreateVendor } from './pages/CreateVendor';
+import { Login } from './pages/Login';
+import { MyRequests } from './pages/MyRequests';
+import { Notifications } from './pages/Notifications';
+import { SuperAdminDashboard } from './pages/SuperAdminDashboard';
+import { VendorDashboard } from './pages/VendorDashboard';
 import { VendorSettings } from './pages/VendorSettings';
+import { VendorsList } from './pages/VendorsList';
 import { UserRole } from './types';
 
 const App: React.FC = () => {
@@ -81,6 +83,8 @@ const App: React.FC = () => {
                                     <Route path="my-requests" element={<AdminMyRequests />} />
                                     <Route path="picked-requests" element={<AdminMyRequests />} />
                                     <Route path="notifications" element={<Notifications />} />
+                                    <Route path="accounts/list" element={<AccountList />} />
+                                    <Route path="accounts/add" element={<AddAccount />} />
                                 </Route>
 
                                 {/* Default redirect based on subdomain and auth */}

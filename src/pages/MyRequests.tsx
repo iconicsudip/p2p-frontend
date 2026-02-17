@@ -1,10 +1,11 @@
-import { Button, DatePicker, Dropdown, Form, Image, Input, message, Modal, Select, Space, Spin, Table, Upload } from 'antd';
+import { Button, DatePicker, Dropdown, Form, Image, Input, message, Modal, Select, Space, Spin, Table, Tabs, Upload } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
 import dayjs from 'dayjs';
-import { AlertCircle, AlertTriangle, Check, CheckCircle, Copy, Eye, MoreVertical, QrCode, RotateCcw, Trash2, Upload as UploadIcon, X, XCircle } from 'lucide-react';
+import { AlertCircle, AlertTriangle, Building2, Check, CheckCircle, Copy, Eye, MoreVertical, QrCode, RotateCcw, Trash2, Upload as UploadIcon, X, XCircle } from 'lucide-react';
 import React, { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import {
+    useAdminBankDetails,
     useCreatedRequests,
     useDeleteRequest,
     usePickedRequests,
@@ -15,7 +16,7 @@ import {
     useVerifyPayment,
 } from '../hooks/useRequests';
 import { requestAPI } from '../services/apiService';
-import { Request, RequestStatus, RequestType } from '../types';
+import { Request, RequestStatus, RequestType, UserRole } from '../types';
 import { compressImage } from '../utils/imageUtils';
 
 
@@ -65,6 +66,7 @@ export const MyRequests: React.FC = () => {
         type: typeFilter
     });
     const { data: detailedRequest, isLoading: isDetailsLoading } = useRequestDetails(selectedRequest?.id || '', !!selectedRequest?.id);
+    const { data: adminDetails } = useAdminBankDetails();
 
 
 
@@ -286,20 +288,7 @@ export const MyRequests: React.FC = () => {
         message.success('Copied to clipboard!');
     };
 
-    const copyAllBankDetails = () => {
-        if (!selectedRequest) return;
 
-        let formattedText = '';
-
-        if (selectedRequest.bankDetails) {
-            formattedText = `Amount: ₹${selectedRequest.amount}\nAccount Number: ${selectedRequest.bankDetails.accountNumber}\nIFSC Code: ${selectedRequest.bankDetails.ifscCode}\nBank Name: ${selectedRequest.bankDetails.bankName}\nAccount Holder Name: ${selectedRequest.bankDetails.accountHolderName}`;
-        } else if (selectedRequest.upiId) {
-            formattedText = `Amount: ₹${selectedRequest.amount}\nUPI ID: ${selectedRequest.upiId}`;
-        }
-
-        navigator.clipboard.writeText(formattedText);
-        message.success('All details copied to clipboard!');
-    };
 
     const handleCancelRequestClick = (record: Request) => {
         setSelectedRequestForCancel(record);
@@ -1177,89 +1166,168 @@ export const MyRequests: React.FC = () => {
                 styles={{ content: { borderRadius: '16px', padding: '24px' } }}
                 closeIcon={<X className="text-gray-400 text-lg" />}
             >
-                {(selectedRequest?.bankDetails || selectedRequest?.upiId || selectedRequest?.qrCode) && (
-                    <div className="mt-6 flex flex-col gap-4">
-                        {selectedRequest.bankDetails && (
-                            <div className="bg-slate-50 rounded-xl p-5 border border-slate-100">
-                                <div className="space-y-4">
+                {selectedRequest && (() => {
+                    const isAdminRequest = selectedRequest?.createdBy?.role === UserRole.SUPER_ADMIN ||
+                        ((adminDetails as any)?.id && selectedRequest?.createdById === (adminDetails as any).id);
+
+                    const details = isAdminRequest && adminDetails?.bankDetails
+                        ? adminDetails.bankDetails
+                        : selectedRequest.bankDetails;
+
+                    const legacyUpi = isAdminRequest && adminDetails?.upiId
+                        ? adminDetails.upiId
+                        : selectedRequest.upiId;
+
+                    const legacyQr = isAdminRequest && adminDetails?.qrCode
+                        ? adminDetails.qrCode
+                        : selectedRequest.qrCode;
+
+                    let accounts: any[] = [];
+                    if (Array.isArray(details)) {
+                        accounts = [...details];
+                    } else if (details) {
+                        accounts = [{ ...details, type: 'BANK_ACCOUNT' }];
+                    }
+
+                    if (legacyUpi && !accounts.find(a => a.type === 'UPI' && a.upiId === legacyUpi)) {
+                        accounts.push({ type: 'UPI', upiId: legacyUpi, id: 'legacy-upi' });
+                    }
+                    if (legacyQr && !accounts.find(a => a.type === 'QR_CODE' && a.qrCode === legacyQr)) {
+                        accounts.push({ type: 'QR_CODE', qrCode: legacyQr, id: 'legacy-qr' });
+                    }
+
+                    accounts = accounts.filter(acc => acc.isActive !== false);
+
+                    if (accounts.length === 0) return <div className="p-6 text-center text-slate-500">No bank details available.</div>;
+
+                    const renderAccountContent = (account: any) => (
+                        <div className="mt-4 flex flex-col gap-4">
+                            {/* BANK ACCOUNT */}
+                            {account.type === 'BANK_ACCOUNT' && (
+                                <div className="bg-slate-50 rounded-xl p-5 border border-slate-100 space-y-4">
                                     <div>
                                         <div className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Account Number</div>
-                                        <span className="text-base font-bold text-gray-900">{selectedRequest.bankDetails.accountNumber}</span>
+                                        <span className="text-base font-bold text-gray-900">{account.accountNumber}</span>
                                     </div>
-
                                     <div>
                                         <div className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">IFSC Code</div>
-                                        <span className="text-base font-bold text-gray-900">{selectedRequest.bankDetails.ifscCode}</span>
+                                        <span className="text-base font-bold text-gray-900">{account.ifscCode}</span>
                                     </div>
-
                                     <div>
                                         <div className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Bank Name</div>
-                                        <span className="text-base font-bold text-gray-900">{selectedRequest.bankDetails.bankName}</span>
+                                        <span className="text-base font-bold text-gray-900">{account.bankName}</span>
                                     </div>
-
                                     <div>
                                         <div className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Account Holder Name</div>
-                                        <span className="text-base font-bold text-gray-900">{selectedRequest.bankDetails.accountHolderName}</span>
+                                        <span className="text-base font-bold text-gray-900">{account.accountHolderName}</span>
                                     </div>
                                 </div>
-                            </div>
-                        )}
+                            )}
 
-                        {selectedRequest.upiId && (
-                            <div className="bg-slate-50 rounded-xl p-5 border border-slate-100">
-                                <div className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">UPI ID</div>
-                                <span className="text-base font-bold text-gray-900">{selectedRequest.upiId}</span>
-                            </div>
-                        )}
-
-                        {selectedRequest.qrCode && (
-                            <div className="bg-gradient-to-br from-teal-50 to-emerald-50 rounded-xl p-5 border border-teal-100">
-                                <h3 className="text-sm font-bold text-slate-800 mb-3 flex items-center gap-2">
-                                    <QrCode size={16} className="text-teal-600" />
-                                    Scan QR to Pay
-                                </h3>
-                                <div className="flex justify-center bg-white p-3 rounded-xl border border-slate-200 mb-3">
-                                    <Image
-                                        src={selectedRequest.qrCode}
-                                        alt="Payment QR Code"
-                                        className="max-w-full max-h-48 object-contain rounded-lg"
-                                    />
+                            {/* UPI */}
+                            {account.type === 'UPI' && (
+                                <div className="bg-slate-50 rounded-xl p-5 border border-slate-100">
+                                    <div className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">UPI ID</div>
+                                    <span className="text-base font-bold text-gray-900">{account.upiId}</span>
                                 </div>
-                                <a
-                                    href={selectedRequest.qrCode}
-                                    download="payment-qr-code.png"
-                                    className="block w-full"
-                                >
-                                    <Button
-                                        block
-                                        className="h-9 rounded-lg border-teal-200 text-teal-700 font-semibold hover:bg-teal-50 hover:border-teal-300 hover:text-teal-800"
-                                    >
-                                        Download QR Code
-                                    </Button>
-                                </a>
-                            </div>
-                        )}
+                            )}
 
-                        <div className="flex gap-3 pt-2">
-                            {selectedRequest && (selectedRequest.bankDetails || selectedRequest.upiId) && (
+                            {/* QR CODE */}
+                            {account.type === 'QR_CODE' && (
+                                <div className="bg-gradient-to-br from-teal-50 to-emerald-50 rounded-xl p-5 border border-teal-100">
+                                    <h3 className="text-sm font-bold text-slate-800 mb-3 flex items-center gap-2">
+                                        <QrCode size={16} className="text-teal-600" />
+                                        Scan QR to Pay
+                                    </h3>
+                                    <div className="flex justify-center bg-white p-3 rounded-xl border border-slate-200 mb-3">
+                                        <Image
+                                            src={account.qrCode}
+                                            alt="Payment QR Code"
+                                            className="max-w-full max-h-48 object-contain rounded-lg"
+                                        />
+                                    </div>
+                                    <a
+                                        href={account.qrCode}
+                                        download="payment-qr-code.png"
+                                        className="block w-full"
+                                    >
+                                        <Button
+                                            block
+                                            className="h-9 rounded-lg border-teal-200 text-teal-700 font-semibold hover:bg-teal-50 hover:border-teal-300 hover:text-teal-800"
+                                        >
+                                            Download QR Code
+                                        </Button>
+                                    </a>
+                                </div>
+                            )}
+
+                            <div className="flex gap-3 pt-2">
                                 <Button
                                     type="primary"
                                     icon={<Copy size={18} />}
-                                    onClick={copyAllBankDetails}
+                                    onClick={() => {
+                                        let text = '';
+                                        if (account.type === 'BANK_ACCOUNT') {
+                                            text = `Amount: ₹${selectedRequest.amount}\nAccount Number: ${account.accountNumber}\nIFSC Code: ${account.ifscCode}\nBank Name: ${account.bankName}\nAccount Holder Name: ${account.accountHolderName}`;
+                                        } else if (account.type === 'UPI') {
+                                            text = `Amount: ₹${selectedRequest.amount}\nUPI ID: ${account.upiId}`;
+                                        }
+                                        if (text) {
+                                            navigator.clipboard.writeText(text);
+                                            message.success('Details copied!');
+                                        }
+                                    }}
+                                    disabled={account.type === 'QR_CODE'}
                                     className="flex-1 h-11 bg-[#5B63E6] hover:bg-[#4c54d6] border-none shadow-lg shadow-indigo-100 rounded-xl font-bold"
                                 >
-                                    Copy All Details
+                                    Copy Details
                                 </Button>
-                            )}
-                            <Button
-                                onClick={() => setBankDetailsModalVisible(false)}
-                                className="px-6 h-11 rounded-xl border-gray-200 text-gray-600 font-medium hover:text-gray-800 hover:border-gray-300"
-                            >
-                                Close
-                            </Button>
+                                <Button
+                                    onClick={() => setBankDetailsModalVisible(false)}
+                                    className="px-6 h-11 rounded-xl border-gray-200 text-gray-600 font-medium hover:text-gray-800 hover:border-gray-300"
+                                >
+                                    Close
+                                </Button>
+                            </div>
                         </div>
-                    </div>
-                )}
+                    );
+
+                    const items = accounts.map((account, index) => {
+                        let label = `Account ${index + 1}`;
+                        let icon = <Building2 size={16} />;
+
+                        if (account.type === 'UPI') {
+                            label = 'UPI';
+                            icon = <QrCode size={16} />;
+                        } else if (account.type === 'QR_CODE') {
+                            label = 'Scanner';
+                            icon = <QrCode size={16} />;
+                        } else if (account.bankName) {
+                            label = account.bankName.split(' ')[0];
+                        }
+
+                        return {
+                            key: account.id || index.toString(),
+                            label: (
+                                <span className="flex items-center gap-2">
+                                    {icon}
+                                    {label}
+                                </span>
+                            ),
+                            children: renderAccountContent(account)
+                        };
+                    });
+
+                    return (
+                        <div className="mt-2">
+                            <Tabs
+                                defaultActiveKey={items[0]?.key}
+                                items={items}
+                                type="card"
+                            />
+                        </div>
+                    );
+                })()}
             </Modal>
 
             {/* Rejection Modal */}

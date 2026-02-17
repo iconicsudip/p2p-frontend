@@ -1,4 +1,4 @@
-import { Button, Card, Form, Image, Input, message, Modal, Upload } from 'antd';
+import { Button, Card, Form, Image, Input, message, Modal, Tabs, Upload } from 'antd';
 import dayjs from 'dayjs';
 import { ArrowDown, Building2, Image as ImageIcon, QrCode, Search, Upload as UploadIcon, User } from 'lucide-react';
 import React, { useState } from 'react';
@@ -42,6 +42,7 @@ export const CreateRequest: React.FC = () => {
     // Modal state for bank details after pick
     const [isBankDetailsModalVisible, setIsBankDetailsModalVisible] = useState(false);
     const [pickedRequestDetails, setPickedRequestDetails] = useState<any>(null);
+    const [isCreatingAdminRequest, setIsCreatingAdminRequest] = useState(false);
 
 
 
@@ -180,14 +181,10 @@ export const CreateRequest: React.FC = () => {
             // Check if it's admin fallback (ID = 'admin-fallback') or created by admin
             const isAdminWithdrawal = selectedWithdrawal?.id === 'admin-fallback' ||
                 (selectedWithdrawal?.type === RequestType.WITHDRAWAL &&
-                    selectedWithdrawal?.createdBy?.role === UserRole.SUPER_ADMIN);
+                    (selectedWithdrawal?.createdBy?.role === UserRole.SUPER_ADMIN ||
+                        (userData?.user?.id && selectedWithdrawal?.createdById === userData.user.id)));
 
-            console.log('Admin withdrawal check:', {
-                requestId: selectedWithdrawal?.id,
-                isAdminWithdrawal,
-                hasAdminBankDetails: !!adminDetails?.bankDetails,
-                adminDetails: adminDetails
-            });
+
 
             setPickedRequestDetails({
                 ...selectedWithdrawal,
@@ -260,9 +257,6 @@ export const CreateRequest: React.FC = () => {
         matchingRequests.length === 0 || // No requests >= amount found
         Math.max(...matchingRequests.map((r: any) => r.amount)) < searchAmount // Amount too large
     );
-
-    // State to track if admin request is being created
-    const [isCreatingAdminRequest, setIsCreatingAdminRequest] = useState(false);
 
 
     return (
@@ -873,140 +867,185 @@ Account Holder Name: Test`}
                         </p>
                     </div>
 
-                    {pickedRequestDetails?.bankDetails && (
-                        <div className="bg-gradient-to-br from-indigo-50 to-purple-50 rounded-2xl p-6 border border-indigo-100">
-                            <h3 className="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
-                                <Building2 size={20} className="text-indigo-600" />
-                                Bank Account Details
-                            </h3>
+                    {(() => {
+                        const details = pickedRequestDetails?.bankDetails;
+                        const legacyUpi = pickedRequestDetails?.upiId;
+                        const legacyQr = pickedRequestDetails?.qrCode;
 
-                            <div className="space-y-3">
-                                {/* Amount */}
-                                <div>
-                                    <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Amount</p>
-                                    <div className="bg-white rounded-xl p-3 border border-slate-200">
-                                        <code className="text-slate-800 font-mono text-sm">₹{pickedRequestDetails.pickedAmount?.toLocaleString()}</code>
-                                    </div>
-                                </div>
+                        console.log('details:', details, 'legacyUpi:', legacyUpi, 'legacyQr:', legacyQr);
 
-                                {/* Account Holder Name */}
-                                <div>
-                                    <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Account Holder Name</p>
-                                    <div className="bg-white rounded-xl p-3 border border-slate-200">
-                                        <code className="text-slate-800 font-mono text-sm">{pickedRequestDetails.bankDetails.accountHolderName}</code>
-                                    </div>
-                                </div>
+                        // normalize to array
+                        let accounts: any[] = [];
+                        console.log("details are", details)
+                        if (Array.isArray(details)) {
+                            accounts = [...details];
+                        } else if (details) {
+                            accounts = [{ ...details, type: 'BANK_ACCOUNT' }];
+                        }
 
-                                {/* Account Number */}
-                                <div>
-                                    <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Account Number</p>
-                                    <div className="bg-white rounded-xl p-3 border border-slate-200">
-                                        <code className="text-slate-800 font-mono text-sm">{pickedRequestDetails.bankDetails.accountNumber}</code>
-                                    </div>
-                                </div>
+                        // Add legacy fields if they exist and aren't duplicates (simple check)
+                        if (legacyUpi && !accounts.find(a => a.type === 'UPI' && a.upiId === legacyUpi)) {
+                            accounts.push({ type: 'UPI', upiId: legacyUpi, id: 'legacy-upi' });
+                        }
+                        if (legacyQr && !accounts.find(a => a.type === 'QR_CODE' && a.qrCode === legacyQr)) {
+                            accounts.push({ type: 'QR_CODE', qrCode: legacyQr, id: 'legacy-qr' });
+                        }
 
-                                {/* IFSC Code */}
-                                <div>
-                                    <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">IFSC Code</p>
-                                    <div className="bg-white rounded-xl p-3 border border-slate-200">
-                                        <code className="text-slate-800 font-mono text-sm">{pickedRequestDetails.bankDetails.ifscCode}</code>
-                                    </div>
-                                </div>
+                        // Filter out inactive accounts if they have isActive property
+                        accounts = accounts.filter(acc => acc.isActive !== false);
 
-                                {/* Bank Name */}
-                                <div>
-                                    <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Bank Name</p>
-                                    <div className="bg-white rounded-xl p-3 border border-slate-200">
-                                        <code className="text-slate-800 font-mono text-sm">{pickedRequestDetails.bankDetails.bankName}</code>
+                        if (accounts.length === 0) return null;
+
+                        const renderAccountContent = (account: any) => (
+                            <div className="mt-2">
+                                {account.type === 'BANK_ACCOUNT' && (
+                                    <div className="bg-gradient-to-br from-indigo-50 to-purple-50 rounded-2xl p-6 border border-indigo-100">
+                                        <div className="space-y-3">
+                                            <div>
+                                                <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Amount</p>
+                                                <div className="bg-white rounded-xl p-3 border border-slate-200">
+                                                    <code className="text-slate-800 font-mono text-sm">₹{pickedRequestDetails.pickedAmount?.toLocaleString()}</code>
+                                                </div>
+                                            </div>
+                                            <div>
+                                                <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Account Holder Name</p>
+                                                <div className="bg-white rounded-xl p-3 border border-slate-200">
+                                                    <code className="text-slate-800 font-mono text-sm">{account.accountHolderName}</code>
+                                                </div>
+                                            </div>
+                                            <div>
+                                                <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Account Number</p>
+                                                <div className="bg-white rounded-xl p-3 border border-slate-200">
+                                                    <code className="text-slate-800 font-mono text-sm">{account.accountNumber}</code>
+                                                </div>
+                                            </div>
+                                            <div>
+                                                <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">IFSC Code</p>
+                                                <div className="bg-white rounded-xl p-3 border border-slate-200">
+                                                    <code className="text-slate-800 font-mono text-sm">{account.ifscCode}</code>
+                                                </div>
+                                            </div>
+                                            <div>
+                                                <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Bank Name</p>
+                                                <div className="bg-white rounded-xl p-3 border border-slate-200">
+                                                    <code className="text-slate-800 font-mono text-sm">{account.bankName}</code>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <Button
+                                            type="primary"
+                                            block
+                                            size="large"
+                                            onClick={() => {
+                                                const copyText = `Amount: ₹${pickedRequestDetails.pickedAmount?.toLocaleString()}
+Account Holder Name: ${account.accountHolderName}
+Account Number: ${account.accountNumber}
+IFSC Code: ${account.ifscCode}
+Bank Name: ${account.bankName}`;
+                                                navigator.clipboard.writeText(copyText);
+                                                message.success('Bank details copied!');
+                                            }}
+                                            className="mt-4 h-11 rounded-xl bg-indigo-600 hover:bg-indigo-700 font-semibold"
+                                        >
+                                            Copy Details
+                                        </Button>
                                     </div>
-                                </div>
+                                )}
+
+                                {account.type === 'UPI' && (
+                                    <div className="bg-gradient-to-br from-purple-50 to-pink-50 rounded-2xl p-6 border border-purple-100">
+                                        <div>
+                                            <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">UPI ID</p>
+                                            <div className="bg-white rounded-xl p-3 border border-slate-200">
+                                                <code className="text-slate-800 font-mono text-sm">{account.upiId}</code>
+                                            </div>
+                                        </div>
+                                        <Button
+                                            type="primary"
+                                            block
+                                            size="large"
+                                            onClick={() => {
+                                                const copyText = `Amount: ₹${pickedRequestDetails.pickedAmount?.toLocaleString()}
+UPI ID: ${account.upiId}`;
+                                                navigator.clipboard.writeText(copyText);
+                                                message.success('UPI details copied!');
+                                            }}
+                                            className="mt-4 h-11 rounded-xl bg-purple-600 hover:bg-purple-700 font-semibold"
+                                        >
+                                            Copy UPI Details
+                                        </Button>
+                                    </div>
+                                )}
+
+                                {account.type === 'QR_CODE' && (
+                                    <div className="bg-gradient-to-br from-teal-50 to-emerald-50 rounded-2xl p-6 border border-teal-100">
+                                        <div className="flex justify-center bg-white p-4 rounded-xl border border-slate-200">
+                                            <Image
+                                                src={account.qrCode}
+                                                alt="Payment QR Code"
+                                                className="max-w-full max-h-64 object-contain rounded-lg"
+                                            />
+                                        </div>
+                                        <a
+                                            href={account.qrCode}
+                                            download="payment-qr-code.png"
+                                            className="block w-full"
+                                        >
+                                            <Button
+                                                type="primary"
+                                                block
+                                                size="large"
+                                                className="mt-4 h-11 rounded-xl bg-teal-600 hover:bg-teal-700 font-semibold"
+                                            >
+                                                Download QR Code
+                                            </Button>
+                                        </a>
+                                    </div>
+                                )}
+
+                                {(!account.type || (account.type !== 'BANK_ACCOUNT' && account.type !== 'UPI' && account.type !== 'QR_CODE')) && (
+                                    <div className="bg-slate-50 rounded-2xl p-6 border border-slate-200">
+                                        <p className="text-slate-500">Unknown account type</p>
+                                    </div>
+                                )}
                             </div>
+                        );
 
-                            {/* Copy All Button */}
-                            <Button
-                                type="primary"
-                                block
-                                size="large"
-                                onClick={() => {
-                                    const bankDetails = pickedRequestDetails.bankDetails;
-                                    const copyText = `Amount: ₹${pickedRequestDetails.pickedAmount?.toLocaleString()}
-Account Holder Name: ${bankDetails.accountHolderName}
-Account Number: ${bankDetails.accountNumber}
-IFSC Code: ${bankDetails.ifscCode}
-Bank Name: ${bankDetails.bankName}`;
-                                    navigator.clipboard.writeText(copyText);
-                                    message.success('All bank details copied!');
-                                }}
-                                className="mt-4 h-11 rounded-xl bg-indigo-600 hover:bg-indigo-700 font-semibold"
-                            >
-                                Copy All Details
-                            </Button>
-                        </div>
-                    )}
+                        const items = accounts.map((account, index) => {
+                            let label = `Account ${index + 1}`;
+                            let icon = <Building2 size={16} />;
 
-                    {pickedRequestDetails?.upiId && (
-                        <div className="bg-gradient-to-br from-purple-50 to-pink-50 rounded-2xl p-6 border border-purple-100 mt-4">
-                            <h3 className="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
-                                <QrCode size={20} className="text-purple-600" />
-                                UPI Details
-                            </h3>
+                            if (account.type === 'BANK_ACCOUNT') {
+                                label = account.bankName || 'Bank Account';
+                            } else if (account.type === 'UPI') {
+                                label = 'UPI ID';
+                                icon = <QrCode size={16} />;
+                            } else if (account.type === 'QR_CODE') {
+                                label = 'QR Code';
+                                icon = <ImageIcon size={16} />;
+                            }
 
-                            <div>
-                                <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">UPI ID</p>
-                                <div className="bg-white rounded-xl p-3 border border-slate-200">
-                                    <code className="text-slate-800 font-mono text-sm">{pickedRequestDetails.upiId}</code>
-                                </div>
-                            </div>
+                            return {
+                                key: account.id || index.toString(),
+                                label: (
+                                    <span className="flex items-center gap-2">
+                                        {icon}
+                                        {label}
+                                    </span>
+                                ),
+                                children: renderAccountContent(account)
+                            };
+                        });
 
-                            {/* Copy UPI Button */}
-                            <Button
-                                type="primary"
-                                block
-                                size="large"
-                                onClick={() => {
-                                    const copyText = `Amount: ₹${pickedRequestDetails.pickedAmount?.toLocaleString()}
-UPI ID: ${pickedRequestDetails.upiId}`;
-                                    navigator.clipboard.writeText(copyText);
-                                    message.success('UPI details copied!');
-                                }}
-                                className="mt-4 h-11 rounded-xl bg-purple-600 hover:bg-purple-700 font-semibold"
-                            >
-                                Copy UPI Details
-                            </Button>
-                        </div>
-                    )}
-
-                    {pickedRequestDetails?.qrCode && (
-                        <div className="bg-gradient-to-br from-teal-50 to-emerald-50 rounded-2xl p-6 border border-teal-100 mt-4">
-                            <h3 className="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
-                                <QrCode size={20} className="text-teal-600" />
-                                Review QR Code
-                            </h3>
-
-                            <div className="flex justify-center bg-white p-4 rounded-xl border border-slate-200">
-                                <Image
-                                    src={pickedRequestDetails.qrCode}
-                                    alt="Payment QR Code"
-                                    className="max-w-full max-h-64 object-contain rounded-lg"
-                                />
-                            </div>
-
-                            <a
-                                href={pickedRequestDetails.qrCode}
-                                download="payment-qr-code.png"
-                                className="block w-full"
-                            >
-                                <Button
-                                    type="primary"
-                                    block
-                                    size="large"
-                                    className="mt-4 h-11 rounded-xl bg-teal-600 hover:bg-teal-700 font-semibold"
-                                >
-                                    Download QR Code
-                                </Button>
-                            </a>
-                        </div>
-                    )}
+                        return (
+                            <Tabs
+                                defaultActiveKey={items[0]?.key}
+                                items={items}
+                                type="card"
+                                className="custom-tabs"
+                            />
+                        );
+                    })()}
 
                     <div className="mt-6">
                         <Button
