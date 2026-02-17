@@ -1,18 +1,16 @@
-import React, { useState } from 'react';
-import { Button, Space, Tooltip } from 'antd';
+import { Button, Form, Input, message, Modal, Pagination, Radio, Space, Tooltip } from 'antd';
 import {
-    Plus,
+    Edit,
     History,
-    KeyRound
+    KeyRound,
+    Plus
 } from 'lucide-react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAllVendors } from '../hooks/useAuth';
-import { authAPI } from '../services/apiService';
-import { Pagination, Modal, Input, Form, message, Radio } from 'antd';
 import { VendorActivityDrawer } from '../components/VendorActivityDrawer';
+import { useAllVendors, useUpdateVendor } from '../hooks/useAuth';
+import { authAPI } from '../services/apiService';
 import { User, WithdrawalLimitConfig } from '../types';
-import { useUpdateVendor } from '../hooks/useAuth';
-import { Edit } from 'lucide-react';
 
 
 export const VendorsList: React.FC = () => {
@@ -174,83 +172,86 @@ export const VendorsList: React.FC = () => {
                                         Loading vendors...
                                     </td>
                                 </tr>
-                            ) : vendors.map((vendor) => (
-                                <tr key={vendor.id} className="hover:bg-slate-50/50 transition-colors">
-                                    <td className="px-6 py-4">
-                                        <div className="flex items-center gap-3">
-                                            <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-bold ${vendor.name.charAt(0).toUpperCase() === 'G' ? 'bg-indigo-50 text-indigo-electric' :
-                                                vendor.name.charAt(0).toUpperCase() === 'N' ? 'bg-amber-50 text-amber-600' :
-                                                    'bg-purple-50 text-purple-600'
-                                                }`}>
-                                                {vendor.name.substring(0, 2).toUpperCase()}
+                            ) : vendors.map((vendor) => {
+                                const primaryBankDetails = Array.isArray(vendor.bankDetails) ? vendor.bankDetails[0] : vendor.bankDetails;
+                                return (
+                                    <tr key={vendor.id} className="hover:bg-slate-50/50 transition-colors">
+                                        <td className="px-6 py-4">
+                                            <div className="flex items-center gap-3">
+                                                <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-bold ${vendor.name.charAt(0).toUpperCase() === 'G' ? 'bg-indigo-50 text-indigo-electric' :
+                                                    vendor.name.charAt(0).toUpperCase() === 'N' ? 'bg-amber-50 text-amber-600' :
+                                                        'bg-purple-50 text-purple-600'
+                                                    }`}>
+                                                    {vendor.name.substring(0, 2).toUpperCase()}
+                                                </div>
+                                                <div>
+                                                    <p className="font-bold text-slate-900">{vendor.name}</p>
+                                                    <p className="text-xs text-slate-500 font-medium">{vendor.username}</p>
+                                                </div>
                                             </div>
-                                            <div>
-                                                <p className="font-bold text-slate-900">{vendor.name}</p>
-                                                <p className="text-xs text-slate-500 font-medium">{vendor.username}</p>
-                                            </div>
-                                        </div>
-                                    </td>
-                                    <td className="px-6 py-4">
-                                        <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-700">
-                                            Active
-                                        </span>
-                                    </td>
-                                    <td className="px-6 py-4 text-sm text-slate-600">
-                                        <div className="flex flex-col gap-1">
-                                            <span className="font-medium text-slate-900">{vendor.bankDetails?.bankName || 'N/A'}</span>
-                                            <span className="text-xs">
-                                                {vendor.bankDetails?.accountNumber ? `**** ${vendor.bankDetails.accountNumber.slice(-4)}` : 'N/A'}
+                                        </td>
+                                        <td className="px-6 py-4">
+                                            <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-700">
+                                                Active
                                             </span>
-                                            {vendor.qrCode && (
-                                                <span className="text-xs font-semibold text-teal-600 bg-teal-50 px-2 py-0.5 rounded-full w-fit mt-1">
-                                                    QR Code Available
+                                        </td>
+                                        <td className="px-6 py-4 text-sm text-slate-600">
+                                            <div className="flex flex-col gap-1">
+                                                <span className="font-medium text-slate-900">{primaryBankDetails?.bankName || 'N/A'}</span>
+                                                <span className="text-xs">
+                                                    {primaryBankDetails?.accountNumber ? `**** ${primaryBankDetails.accountNumber.slice(-4)}` : 'N/A'}
                                                 </span>
-                                            )}
-                                        </div>
-                                    </td>
-                                    <td className="px-6 py-4 text-sm text-slate-600">
-                                        {new Date(vendor.createdAt || '').toLocaleDateString('en-US', {
-                                            month: 'short',
-                                            day: '2-digit',
-                                            year: 'numeric'
-                                        })}
-                                    </td>
-                                    <td className="px-6 py-4 text-right">
-                                        <Space>
-                                            <Tooltip title="Edit Vendor">
-                                                <button
-                                                    onClick={() => openEditModal(vendor)}
-                                                    className="p-2 text-slate-400 hover:text-indigo-500 transition-colors cursor-pointer"
-                                                >
-                                                    <Edit size={16} />
-                                                </button>
-                                            </Tooltip>
-                                            <Tooltip title="View Activity History">
-                                                <button
-                                                    onClick={() => {
-                                                        setSelectedVendorForActivity({ id: vendor.id, name: vendor.name });
-                                                        setActivityDrawerVisible(true);
-                                                    }}
-                                                    className="p-2 text-slate-400 hover:text-blue-500 transition-colors cursor-pointer"
-                                                >
-                                                    <History size={16} />
-                                                </button>
-                                            </Tooltip>
-                                            <Tooltip title="Reset Password">
-                                                <button
-                                                    onClick={() => {
-                                                        setSelectedVendorForReset({ id: vendor.id, name: vendor.name });
-                                                        setResetPasswordModalVisible(true);
-                                                    }}
-                                                    className="p-2 text-slate-400 hover:text-amber-500 transition-colors cursor-pointer"
-                                                >
-                                                    <KeyRound size={16} />
-                                                </button>
-                                            </Tooltip>
-                                        </Space>
-                                    </td>
-                                </tr>
-                            ))}
+                                                {vendor.qrCode && (
+                                                    <span className="text-xs font-semibold text-teal-600 bg-teal-50 px-2 py-0.5 rounded-full w-fit mt-1">
+                                                        QR Code Available
+                                                    </span>
+                                                )}
+                                            </div>
+                                        </td>
+                                        <td className="px-6 py-4 text-sm text-slate-600">
+                                            {new Date(vendor.createdAt || '').toLocaleDateString('en-US', {
+                                                month: 'short',
+                                                day: '2-digit',
+                                                year: 'numeric'
+                                            })}
+                                        </td>
+                                        <td className="px-6 py-4 text-right">
+                                            <Space>
+                                                <Tooltip title="Edit Vendor">
+                                                    <button
+                                                        onClick={() => openEditModal(vendor)}
+                                                        className="p-2 text-slate-400 hover:text-indigo-500 transition-colors cursor-pointer"
+                                                    >
+                                                        <Edit size={16} />
+                                                    </button>
+                                                </Tooltip>
+                                                <Tooltip title="View Activity History">
+                                                    <button
+                                                        onClick={() => {
+                                                            setSelectedVendorForActivity({ id: vendor.id, name: vendor.name });
+                                                            setActivityDrawerVisible(true);
+                                                        }}
+                                                        className="p-2 text-slate-400 hover:text-blue-500 transition-colors cursor-pointer"
+                                                    >
+                                                        <History size={16} />
+                                                    </button>
+                                                </Tooltip>
+                                                <Tooltip title="Reset Password">
+                                                    <button
+                                                        onClick={() => {
+                                                            setSelectedVendorForReset({ id: vendor.id, name: vendor.name });
+                                                            setResetPasswordModalVisible(true);
+                                                        }}
+                                                        className="p-2 text-slate-400 hover:text-amber-500 transition-colors cursor-pointer"
+                                                    >
+                                                        <KeyRound size={16} />
+                                                    </button>
+                                                </Tooltip>
+                                            </Space>
+                                        </td>
+                                    </tr>
+                                )
+                            })}
                         </tbody>
                     </table>
                 </div>
