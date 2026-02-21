@@ -214,6 +214,7 @@ export const AllRequests: React.FC = () => {
                         className="w-48"
                         allowClear
                     >
+                        <Option value={`${RequestStatus.PENDING},${RequestStatus.PICKED},${RequestStatus.PAID_FULL},${RequestStatus.PAID_PARTIAL}`}>Pending (All)</Option>
                         <Option value={RequestStatus.PENDING}>Pending</Option>
                         <Option value={RequestStatus.PICKED}>Picked</Option>
                         <Option value={RequestStatus.PAID_FULL}>Paid Full</Option>

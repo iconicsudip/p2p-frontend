@@ -749,6 +749,7 @@ export const MyRequests: React.FC = () => {
                             className="w-40"
                             allowClear
                         >
+                            <Select.Option value={`${RequestStatus.PENDING},${RequestStatus.PICKED},${RequestStatus.PAID_FULL},${RequestStatus.PAID_PARTIAL}`}>Pending (All)</Select.Option>
                             <Select.Option value={RequestStatus.PENDING}>Pending</Select.Option>
                             <Select.Option value={RequestStatus.PICKED}>Picked</Select.Option>
                             <Select.Option value={RequestStatus.PAID_FULL}>Paid Full</Select.Option>

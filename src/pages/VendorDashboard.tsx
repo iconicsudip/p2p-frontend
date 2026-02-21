@@ -229,7 +229,7 @@ export const VendorDashboard: React.FC = () => {
                     color="#f59e0b"
                     bgColor="bg-amber-50"
                     isLoading={statsLoading}
-                    link={`/vendor/my-requests?type=WITHDRAWAL&status=PENDING`}
+                    link={`/vendor/my-requests?type=WITHDRAWAL&status=${RequestStatus.PENDING},${RequestStatus.PICKED},${RequestStatus.PAID_FULL},${RequestStatus.PAID_PARTIAL}`}
                 />
                 <StatCard
                     title="Rejected Withdrawals"

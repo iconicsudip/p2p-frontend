@@ -19,6 +19,7 @@ import { DateRangeFilter } from '../components/DateRangeFilter';
 import { VendorActivityDrawer } from '../components/VendorActivityDrawer';
 import { useAuth } from '../contexts/AuthContext';
 import { useAllVendorsStats, useExportSettlement, useSystemOverview } from '../hooks/useDashboard';
+import { RequestStatus } from '../types';
 import { authAPI } from '../services/apiService';
 
 const { Title } = Typography;
@@ -311,7 +312,7 @@ export const SuperAdminDashboard: React.FC = () => {
                         color="#f59e0b"
                         bgColor="bg-amber-50"
                         isLoading={overviewLoading}
-                        link={`/admin/requests?type=WITHDRAWAL&status=PENDING${selectedVendor ? `&vendorId=${selectedVendor}` : ''}`}
+                        link={`/admin/requests?type=WITHDRAWAL&status=${RequestStatus.PENDING},${RequestStatus.PICKED},${RequestStatus.PAID_FULL},${RequestStatus.PAID_PARTIAL}${selectedVendor ? `&vendorId=${selectedVendor}` : ''}`}
                     />
                     <StatCard
                         title="Rejected Withdrawals"
