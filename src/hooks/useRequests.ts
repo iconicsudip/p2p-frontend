@@ -241,6 +241,7 @@ export const useDeleteRequest = () => {
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['requests', 'created'] });
             queryClient.invalidateQueries({ queryKey: ['requests', 'counts'] });
+            queryClient.invalidateQueries({ queryKey: ['requests', 'admin-all'] });
             message.success('Request deleted successfully');
         },
         onError: (error: any) => {

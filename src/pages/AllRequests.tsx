@@ -1,10 +1,10 @@
-import { Button, Card, DatePicker, Input, Select, Space, Table, Tag } from 'antd';
+import { Button, Card, DatePicker, Input, Modal, Select, Space, Table, Tag, message } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
 import dayjs from 'dayjs';
-import { Calendar, Search } from 'lucide-react';
+import { Calendar, Search, AlertTriangle } from 'lucide-react';
 import React, { useEffect, useState } from 'react';
 import { useLocation } from 'react-router-dom';
-import { useAllRequestsForAdmin, usePickRequest } from '../hooks/useRequests';
+import { useAllRequestsForAdmin, usePickRequest, useDeleteRequest } from '../hooks/useRequests';
 import { Request, RequestStatus, RequestType } from '../types';
 
 const { RangePicker } = DatePicker;
@@ -22,6 +22,10 @@ export const AllRequests: React.FC = () => {
     const [searchQuery, setSearchQuery] = useState('');
     const [dateRange, setDateRange] = useState<[string, string] | undefined>();
     const [vendorIdFilter, setVendorIdFilter] = useState<string | undefined>(queryParams.get('vendorId') || undefined);
+
+    const [cancelModalVisible, setCancelModalVisible] = useState(false);
+    const [cancelReason, setCancelReason] = useState('');
+    const [selectedRequestForCancel, setSelectedRequestForCancel] = useState<Request | null>(null);
 
     useEffect(() => {
         const type = queryParams.get('type');
@@ -47,7 +51,11 @@ export const AllRequests: React.FC = () => {
     const requests = data?.requests?.data || [];
     const meta = data?.requests?.meta || { page: 1, limit: 10, total: 0, totalPages: 0 };
 
-    const getStatusBadge = (status: RequestStatus) => {
+    const getStatusBadge = (status: RequestStatus | 'CANCELLED', record?: Request) => {
+        if (status === 'CANCELLED' || (record && record.deletedAt)) {
+            return <Tag color="default" className="font-semibold uppercase">CANCELLED</Tag>;
+        }
+
         const config: Record<RequestStatus, { color: string }> = {
             [RequestStatus.PENDING]: { color: 'blue' },
             [RequestStatus.PICKED]: { color: 'orange' },
@@ -57,7 +65,7 @@ export const AllRequests: React.FC = () => {
             [RequestStatus.REJECTED]: { color: 'red' },
             [RequestStatus.PAYMENT_FAILED]: { color: 'volcano' },
         };
-        const style = config[status] || { color: 'default' };
+        const style = config[status as RequestStatus] || { color: 'default' };
 
         return <Tag color={style.color} className="font-semibold uppercase">{status}</Tag>;
     };
@@ -132,15 +140,31 @@ export const AllRequests: React.FC = () => {
             title: <span className="text-xs font-bold text-gray-400 uppercase">Status</span>,
             dataIndex: 'status',
             key: 'status',
-            render: (status: RequestStatus) => getStatusBadge(status),
+            render: (status: RequestStatus, record: Request) => getStatusBadge(status, record),
             width: 150,
+        },
+        {
+            title: <span className="text-xs font-bold text-gray-400 uppercase">Comments</span>,
+            key: 'comments',
+            render: (_: any, record: Request) => {
+                if (record.deletedAt && record.cancellationReason) {
+                    return (
+                        <div className="flex flex-col gap-1 max-w-xs">
+                            <span className="text-xs font-bold text-gray-600">Cancellation Reason</span>
+                            <span className="text-xs text-gray-500 break-words">{record.cancellationReason}</span>
+                        </div>
+                    );
+                }
+                return <span className="text-xs text-gray-400">-</span>;
+            },
+            width: 200,
         },
         {
             title: <span className="text-xs font-bold text-gray-400 uppercase">Actions</span>,
             key: 'actions',
             render: (_, record: Request) => (
                 <Space>
-                    {record.status === RequestStatus.PENDING && record.type === RequestType.WITHDRAWAL && (
+                    {record.status === RequestStatus.PENDING && !record.deletedAt && record.type === RequestType.WITHDRAWAL && (
                         <Button
                             type="primary"
                             onClick={() => handlePickRequest(record.id)}
@@ -150,6 +174,16 @@ export const AllRequests: React.FC = () => {
                             Pick Request
                         </Button>
                     )}
+                    {record.status === RequestStatus.PENDING && !record.deletedAt && (
+                        <Button
+                            danger
+                            type="default"
+                            onClick={() => handleCancelRequestClick(record)}
+                            className="h-8 px-3 rounded-lg font-medium border-red-200 hover:bg-red-50 hover:border-red-300"
+                        >
+                            Cancel
+                        </Button>
+                    )}
                 </Space>
             ),
             width: 120,
@@ -157,6 +191,7 @@ export const AllRequests: React.FC = () => {
     ];
 
     const pickRequestMutation = usePickRequest();
+    const deleteRequestMutation = useDeleteRequest();
 
     const handlePickRequest = (id: string) => {
         // Find the request to get the amount (though backend handles it likely from ID)
@@ -167,6 +202,30 @@ export const AllRequests: React.FC = () => {
                 amount: request.amount
             });
         }
+    };
+
+    const handleCancelRequestClick = (record: Request) => {
+        setSelectedRequestForCancel(record);
+        setCancelReason('');
+        setCancelModalVisible(true);
+    };
+
+    const handleConfirmCancel = async () => {
+        if (!selectedRequestForCancel) return;
+
+        if (!cancelReason.trim()) {
+            message.error('Please provide a reason for cancellation');
+            return;
+        }
+
+        await deleteRequestMutation.mutateAsync({
+            requestId: selectedRequestForCancel.id,
+            reason: cancelReason
+        });
+
+        setCancelModalVisible(false);
+        setSelectedRequestForCancel(null);
+        setCancelReason('');
     };
 
     const handleTableChange = (pagination: any) => {
@@ -215,6 +274,7 @@ export const AllRequests: React.FC = () => {
                         allowClear
                     >
                         <Option value={`${RequestStatus.PENDING},${RequestStatus.PICKED},${RequestStatus.PAID_FULL},${RequestStatus.PAID_PARTIAL}`}>Pending (All)</Option>
+                        <Option value="CANCELLED">Cancelled</Option>
                         <Option value={RequestStatus.PENDING}>Pending</Option>
                         <Option value={RequestStatus.PICKED}>Picked</Option>
                         <Option value={RequestStatus.PAID_FULL}>Paid Full</Option>
@@ -251,6 +311,62 @@ export const AllRequests: React.FC = () => {
                     scroll={{ x: 'max-content' }}
                 />
             </Card>
+
+            <Modal
+                title={<span className="text-lg font-bold text-gray-800">Cancel Request</span>}
+                open={cancelModalVisible}
+                onCancel={() => {
+                    setCancelModalVisible(false);
+                    setCancelReason('');
+                    setSelectedRequestForCancel(null);
+                }}
+                width="min(500px, 95vw)"
+                centered
+                footer={
+                    <div className="flex justify-end gap-3 mt-4">
+                        <Button
+                            onClick={() => {
+                                setCancelModalVisible(false);
+                                setCancelReason('');
+                                setSelectedRequestForCancel(null);
+                            }}
+                            className="rounded-lg font-medium"
+                        >
+                            Back
+                        </Button>
+                        <Button
+                            danger
+                            type="primary"
+                            onClick={handleConfirmCancel}
+                            loading={deleteRequestMutation.isPending}
+                            className="rounded-lg font-medium bg-red-500 hover:bg-red-600 border-none"
+                        >
+                            Confirm Cancellation
+                        </Button>
+                    </div>
+                }
+                styles={{ content: { borderRadius: '16px', padding: '24px' } }}
+            >
+                <div className="mt-4">
+                    <div className="flex items-start gap-3 p-3 bg-red-50 rounded-lg mb-4 border border-red-100">
+                        <AlertTriangle className="text-red-500 flex-shrink-0 mt-0.5" size={18} />
+                        <p className="text-sm text-red-700 m-0">
+                            Are you sure you want to cancel this request? This action cannot be undone.
+                        </p>
+                    </div>
+
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Reason for Cancellation <span className="text-red-500">*</span>
+                    </label>
+                    <Input.TextArea
+                        rows={4}
+                        placeholder="Please provide a reason..."
+                        value={cancelReason}
+                        onChange={(e) => setCancelReason(e.target.value)}
+                        className="rounded-lg border-gray-300 resize-none hover:border-indigo-400 focus:border-indigo-500"
+                    />
+                </div>
+            </Modal>
         </div>
     );
 };
