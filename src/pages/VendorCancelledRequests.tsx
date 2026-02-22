@@ -77,11 +77,16 @@ export const VendorCancelledRequests: React.FC = () => {
             title: <span className="text-xs font-bold text-gray-400 uppercase">Cancellation Reason</span>,
             key: 'cancellationReason',
             render: (_: any, record: Request) => (
-                <div className="text-sm text-gray-600 max-w-sm break-words">
-                    {record.cancellationReason || '-'}
+                <div className="flex flex-col gap-2">
+                    {record.cancelledByAdmin && (
+                        <Tag color="red" className="w-fit mb-1 border-red-200 text-red-700 bg-red-50">Cancelled by Admin</Tag>
+                    )}
+                    <div className="text-sm text-gray-600 max-w-sm break-words">
+                        {record.cancellationReason || '-'}
+                    </div>
                 </div>
             ),
-            width: 250,
+            width: 280,
         },
         {
             title: <span className="text-xs font-bold text-gray-400 uppercase">Cancelled At</span>,

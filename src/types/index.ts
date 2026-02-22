@@ -79,6 +79,9 @@ export interface Request {
   paymentSlips?: PaymentSlip[];
   createdAt: string;
   updatedAt: string;
+  cancellationReason?: string;
+  cancelledByAdmin?: boolean;
+  deletedAt?: string;
   displayType?: RequestType;
   originalType?: RequestType;
 }
