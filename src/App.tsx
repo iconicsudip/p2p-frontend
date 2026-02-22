@@ -16,6 +16,8 @@ import { AdminActivityLog } from './pages/AdminActivityLog';
 import { AdminMyRequests } from './pages/AdminMyRequests';
 import { AdminSettings } from './pages/AdminSettings';
 import { AllRequests } from './pages/AllRequests';
+import { CancelledRequests } from './pages/CancelledRequests';
+import { VendorCancelledRequests } from './pages/VendorCancelledRequests';
 import { CreateRequest } from './pages/CreateRequest';
 import { CreateVendor } from './pages/CreateVendor';
 import { Login } from './pages/Login';
@@ -59,6 +61,7 @@ const App: React.FC = () => {
                                     <Route path="create-request" element={<CreateRequest />} />
                                     <Route path="my-requests" element={<MyRequests />} />
                                     <Route path="picked-requests" element={<MyRequests />} />
+                                    <Route path="cancelled-requests" element={<VendorCancelledRequests />} />
                                     <Route path="notifications" element={<Notifications />} />
                                     <Route path="settings" element={<VendorSettings />} />
                                 </Route>
@@ -82,6 +85,7 @@ const App: React.FC = () => {
                                     <Route path="settings" element={<AdminSettings />} />
                                     <Route path="my-requests" element={<AdminMyRequests />} />
                                     <Route path="picked-requests" element={<AdminMyRequests />} />
+                                    <Route path="cancelled-requests" element={<CancelledRequests />} />
                                     <Route path="notifications" element={<Notifications />} />
                                     <Route path="accounts/list" element={<AccountList />} />
                                     <Route path="accounts/add" element={<AddAccount />} />

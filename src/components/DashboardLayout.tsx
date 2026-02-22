@@ -14,6 +14,7 @@ import {
     Users,
     Wallet,
     X,
+    XCircle,
 } from 'lucide-react';
 import React, { useState } from 'react';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
@@ -71,6 +72,14 @@ export const DashboardLayout: React.FC = () => {
             color: 'text-teal-500',
             bgColor: 'bg-teal-50',
             activeColor: 'text-teal-600'
+        },
+        {
+            key: '/vendor/cancelled-requests',
+            icon: <XCircle size={18} />,
+            label: 'Cancelled Requests',
+            color: 'text-rose-500',
+            bgColor: 'bg-rose-50',
+            activeColor: 'text-rose-600'
         },
         {
             key: '/vendor/notifications',
@@ -160,6 +169,14 @@ export const DashboardLayout: React.FC = () => {
             activeColor: 'text-blue-600'
         },
         {
+            key: '/admin/cancelled-requests',
+            icon: <XCircle size={18} />,
+            label: 'Cancelled Requests',
+            color: 'text-rose-500',
+            bgColor: 'bg-rose-50',
+            activeColor: 'text-rose-600'
+        },
+        {
             key: '/admin/my-requests',
             icon: <FileText size={18} />,
             label: 'Created Requests',
@@ -242,8 +259,8 @@ export const DashboardLayout: React.FC = () => {
                                 </div>
                                 {item.children && (
                                     <div className={`ml-8 space-y-1 overflow-hidden transition-all duration-300 ease-in-out ${isExpanded
-                                            ? 'max-h-40 opacity-100 mt-1'
-                                            : 'max-h-0 opacity-0'
+                                        ? 'max-h-40 opacity-100 mt-1'
+                                        : 'max-h-0 opacity-0'
                                         }`}>
                                         {item.children.map((child: any) => {
                                             const isChildActive = location.pathname === child.key;
